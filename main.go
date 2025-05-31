@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gofit/models"
+	"github.com/gofit/server"
 	"github.com/joho/godotenv"
 )
 
@@ -41,6 +42,10 @@ func main() {
 	clientSecret := os.Getenv("FITBIT_SECRET")
 
 	downloader := NewFitbitDownloader(clientID, clientSecret)
+	err = downloader.ClearAllData()
+	if err != nil {
+		log.Fatal("Failed to clear existing data:", err)
+	}
 
 	// Check if we already have token information
 	err = downloader.LoadTokenInfo()
@@ -55,8 +60,12 @@ func main() {
 	}
 
 	// Download all data for the last 30 days
-	err = downloader.DownloadAllData(30)
+	// err = downloader.DownloadAllData(30)
+	err = downloader.DownloadProfile()
+
 	if err != nil {
 		log.Fatal("Failed to download data:", err)
 	}
+
+	server.Serve()
 }

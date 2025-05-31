@@ -45,6 +45,26 @@ type FitbitDownloader struct {
 	DataDir   string
 }
 
+func (fd *FitbitDownloader) ClearAllData() error {
+	// Clear all data files in the data directory
+	files, err := os.ReadDir(fd.DataDir)
+	if err != nil {
+		return fmt.Errorf("failed to read data directory: %w", err)
+	}
+
+	for _, file := range files {
+		if file.Name() == "token_info.json" {
+			continue
+		}
+		err := os.Remove(fd.DataDir + "/" + file.Name())
+		if err != nil {
+			return fmt.Errorf("failed to remove file %s: %w", file.Name(), err)
+		}
+	}
+
+	return nil
+}
+
 // StartAuthFlow initiates the OAuth authorization flow
 func (fd *FitbitDownloader) StartAuthFlow() error {
 	// Create a channel to receive the authorization code
@@ -452,9 +472,6 @@ func (fd *FitbitDownloader) DownloadHeartRate(startDate, endDate string) error {
 func (fd *FitbitDownloader) DownloadAllData(daysBack int) error {
 	endDate := time.Now().Format("2006-01-02")
 	startDate := time.Now().AddDate(0, 0, -daysBack).Format("2006-01-02")
-
-	// Heart rate data is more voluminous, so limit to 7 days if requesting more
-	// heartRateStartDate := time.Now().AddDate(0, 0, -min(daysBack, 7)).Format("2006-01-02")
 
 	// Download each type of data
 	err := fd.DownloadProfile()
