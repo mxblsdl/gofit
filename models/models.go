@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -341,88 +342,35 @@ func (fd *FitbitDownloader) DownloadProfile() error {
 }
 
 // DownloadActivities downloads activity data for a date range
-func (fd *FitbitDownloader) DownloadActivities(activity, startDate, endDate string) error {
-	err := fd.refreshAccessToken()
-	if err != nil {
-		return err
-	}
-
+func (fd *FitbitDownloader) DownloadActivities(activity, startDate, endDate string) (interface{}, error) {
 	// If no dates are provided, use the last 30 days
 	if startDate == "" || endDate == "" {
 		endDate = time.Now().Format("2006-01-02")
 		startDate = time.Now().AddDate(0, 0, -30).Format("2006-01-02")
 	}
 
-	fmt.Printf("Downloading %s data from %s to %s...\n", activity, startDate, endDate)
+	fmt.Printf("Reading %s data from %s to %s...\n", activity, startDate, endDate)
 
-	url := fmt.Sprintf("https://api.fitbit.com/1/user/-/activities/%s/date/%s/%s.json", activity, startDate, endDate)
-	req, err := http.NewRequest("GET", url, nil)
+	endpoint := fmt.Sprintf("https://api.fitbit.com/1/user/-/activities/%s/date/%s/%s.json", activity, startDate, endDate)
+	filename := fmt.Sprintf("%s_%s_to_%s.json", activity, startDate, endDate)
+
+	data, err := fd.getData(activity, endpoint, filename)
 	if err != nil {
-		return fmt.Errorf("failed to create activities request: %v", err)
+		return nil, fmt.Errorf("failed to download %s data: %v", activity, err)
 	}
-
-	req.Header.Set("Authorization", "Bearer "+fd.TokenInfo.AccessToken)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("activities request failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to download activities data: %d %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	// Read the response body
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read activities response: %v", err)
-	}
-
-	// Indent the JSON for better readability
-	var activitiesData interface{}
-	err = json.Unmarshal(bodyBytes, &activitiesData)
-	if err != nil {
-		return fmt.Errorf("failed to parse activities JSON: %v", err)
-	}
-
-	formattedJSON, err := json.MarshalIndent(activitiesData, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to format activities JSON: %v", err)
-	}
-
-	// Save to file
-	filename := filepath.Join(fd.DataDir, fmt.Sprintf("%s_%s_to_%s.json", activity, startDate, endDate))
-	err = os.WriteFile(filename, formattedJSON, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to save activities data: %v", err)
-	}
-
-	fmt.Println("Activity data downloaded successfully!")
-	return nil
+	fmt.Printf("%s data downloaded successfully!\n", activity)
+	return data, nil
 }
 
-// DownloadHeartRate downloads heart rate data for a date range
-func (fd *FitbitDownloader) DownloadHeartRate(startDate, endDate string) error {
+func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interface{}, error) {
 	err := fd.refreshAccessToken()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// If no dates are provided, use the last 7 days (heart rate data can be large)
-	if startDate == "" || endDate == "" {
-		endDate = time.Now().Format("2006-01-02")
-		startDate = time.Now().AddDate(0, 0, -7).Format("2006-01-02")
-	}
-
-	fmt.Printf("Downloading heart rate data from %s to %s...\n", startDate, endDate)
-
-	url := fmt.Sprintf("https://api.fitbit.com/1/user/-/activities/heart/date/%s/%s.json", startDate, endDate)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create heart rate request: %v", err)
+		return nil, fmt.Errorf("failed to create request for %s: %v", endpoint, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+fd.TokenInfo.AccessToken)
@@ -430,68 +378,127 @@ func (fd *FitbitDownloader) DownloadHeartRate(startDate, endDate string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("heart rate request failed: %v", err)
+		return nil, fmt.Errorf("request for %s failed: %v", endpoint, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to download heart rate data: %d %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("failed to download %s data: %d", endpoint, resp.StatusCode)
 	}
 
-	// Read the response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read heart rate response: %v", err)
+		return nil, fmt.Errorf("failed to read response for %s: %v", endpoint, err)
 	}
 
-	// Indent the JSON for better readability
-	var heartRateData interface{}
-	err = json.Unmarshal(bodyBytes, &heartRateData)
+	var data interface{}
+
+	switch activity {
+	case "heart":
+		var heartData HeartRateData
+		if err := json.Unmarshal(bodyBytes, &heartData); err != nil {
+			return nil, fmt.Errorf("failed to parse heart data JSON for %s: %v", endpoint, err)
+		}
+		data = heartData
+
+	// case "steps":
+	default:
+		var genericData map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &genericData); err != nil {
+			return nil, fmt.Errorf("failed to parse %s data JSON for %s: %v", activity, endpoint, err)
+		}
+		data = genericData
+
+		// return nil, fmt.Errorf("unsupported activity type: %s", activity)
+		// return data, nil
+	}
+
+	// TODO remove once not needed
+	formattedJSON, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to parse heart rate JSON: %v", err)
+		return nil, fmt.Errorf("failed to format JSON for %s: %v", endpoint, err)
 	}
 
-	formattedJSON, err := json.MarshalIndent(heartRateData, "", "  ")
+	filePath := filepath.Join(fd.DataDir, filename)
+	err = os.WriteFile(filePath, formattedJSON, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to format heart rate JSON: %v", err)
+		return nil, fmt.Errorf("failed to save %s data: %v", endpoint, err)
 	}
 
-	// Save to file
-	filename := filepath.Join(fd.DataDir, fmt.Sprintf("heart_rate_%s_to_%s.json", startDate, endDate))
-	err = os.WriteFile(filename, formattedJSON, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to save heart rate data: %v", err)
-	}
+	return data, nil
 
-	fmt.Println("Heart rate data downloaded successfully!")
-	return nil
+	// fmt.Printf("%s data downloaded successfully!\n", endpoint)
+	// return nil
 }
 
 // DownloadAllData downloads all types of data
-func (fd *FitbitDownloader) DownloadAllData(daysBack int) error {
-	endDate := time.Now().Format("2006-01-02")
-	startDate := time.Now().AddDate(0, 0, -daysBack).Format("2006-01-02")
+// func (fd *FitbitDownloader) DownloadAllData(daysBack int) error {
+// 	endDate := time.Now().Format("2006-01-02")
+// 	startDate := time.Now().AddDate(0, 0, -daysBack).Format("2006-01-02")
 
-	// Download each type of data
-	err := fd.DownloadProfile()
-	if err != nil {
-		return fmt.Errorf("failed to download profile: %v", err)
-	}
+// 	// Download each type of data
+// 	err := fd.DownloadProfile()
+// 	if err != nil {
+// 		return fmt.Errorf("failed to download profile: %v", err)
+// 	}
 
-	activites := []string{"steps", "distance", "floors", "calories", "elevation", "minutesSedentary", "minutesLightlyActive", "minutesFairlyActive", "minutesVeryActive"}
-	for _, activity := range activites {
-		err = fd.DownloadActivities(activity, startDate, endDate)
+// 	activities := []string{"steps", "distance", "floors", "calories", "elevation", "minutesSedentary", "minutesLightlyActive", "minutesFairlyActive", "minutesVeryActive", "heart"}
+// 	for _, activity := range activities {
+// 		err = fd.DownloadActivities(activity, startDate, endDate)
+// 		if err != nil {
+// 			return fmt.Errorf("failed to download activities: %v", err)
+// 		}
+// 	}
+
+// 	fmt.Printf("All data downloaded successfully to the '%s' directory!\n", fd.DataDir)
+// 	return nil
+// }
+
+// TODO move these into a separate file or package
+type HeartRateData struct {
+	ActivitiesHeart []struct {
+		DateTime string `json:"dateTime"`
+		Value    struct {
+			CustomHeartRateZones []any `json:"customHeartRateZones"`
+			HeartRateZones       []struct {
+				CaloriesOut float64 `json:"caloriesOut"`
+				Max         int     `json:"max"`
+				Min         int     `json:"min"`
+				Minutes     int     `json:"minutes"`
+				Name        string  `json:"name"`
+			} `json:"heartRateZones"`
+			RestingHeartRate int `json:"restingHeartRate"`
+		} `json:"value"`
+	} `json:"activities-heart"`
+}
+
+
+
+type StepsData struct {
+	ActivitiesSteps []struct {
+		DateTime string `json:"dateTime"`
+		Value    string `json:"value"`
+	} `json:"activities-steps"`
+}
+
+type StepEntry struct {
+	DateTime string `json:"dateTime"`
+	Value    int    `json:"value"`
+}
+
+func (s *StepsData) GetSteps() []StepEntry {
+	entries := make([]StepEntry, len(s.ActivitiesSteps))
+	for i, activity := range s.ActivitiesSteps {
+		val, err := strconv.Atoi(activity.Value)
 		if err != nil {
-			return fmt.Errorf("failed to download activities: %v", err)
+			val = 0 // or handle error as needed
+		}
+		entries[i] = StepEntry{
+			DateTime: activity.DateTime,
+			Value:    val,
 		}
 	}
-
-	err = fd.DownloadHeartRate(startDate, endDate)
-	if err != nil {
-		return fmt.Errorf("failed to download heart rate data: %v", err)
-	}
-
-	fmt.Printf("All data downloaded successfully to the '%s' directory!\n", fd.DataDir)
-	return nil
+	return entries
 }
+
+// TODO add methods that transform data for visualization

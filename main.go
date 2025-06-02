@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gofit/models"
 	"github.com/gofit/server"
@@ -36,6 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	DAYs_BACK := 30
 
 	// Replace with your own Client ID and Client Secret from Fitbit Developer Portal
 	clientID := os.Getenv("FITBIT_ID")
@@ -61,11 +63,21 @@ func main() {
 
 	// Download all data for the last 30 days
 	// err = downloader.DownloadAllData(30)
-	err = downloader.DownloadProfile()
+	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().AddDate(0, 0, -DAYs_BACK).Format("2006-01-02")
 
+	err = downloader.DownloadProfile()
 	if err != nil {
-		log.Fatal("Failed to download data:", err)
+		log.Fatal("Failed to download profile:", err)
 	}
+
+	heartData, err := downloader.DownloadActivities("heart", startDate, endDate)
+	stepData, err := downloader.DownloadActivities("steps", startDate, endDate)
+	if err != nil {
+		log.Fatal("Failed to download heart rate data:", err)
+	}
+	fmt.Println(heartData)
+	fmt.Println(stepData)
 
 	server.Serve()
 }
