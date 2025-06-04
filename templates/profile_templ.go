@@ -8,7 +8,8 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Index() templ.Component {
+// TODO load the profile data into this page
+func Profile() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -41,13 +42,13 @@ func Index() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Fitbit Data</h1><p>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</p><div class=\"chart-links\"><a href=\"/line?type=steps\" class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p></a> <a href=\"/line?type=heart\" class=\"card\"><h2>Heart Rate Chart</h2><p>Monitor your heart rate patterns</p></a></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>User Profile</h1><div class=\"profile-container\"><div class=\"profile-info\"><h2>Personal Information</h2><p>Name: <span id=\"user-name\">Loading...</span></p><p>Age: <span id=\"user-age\">Loading...</span></p><p>Height: <span id=\"user-height\">Loading...</span></p><p>Weight: <span id=\"user-weight\">Loading...</span></p></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout("Home").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout("Profile").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

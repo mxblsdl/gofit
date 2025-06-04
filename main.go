@@ -37,7 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	DAYs_BACK := 30
+	DAYS_BACK := 5
 
 	// Replace with your own Client ID and Client Secret from Fitbit Developer Portal
 	clientID := os.Getenv("FITBIT_ID")
@@ -64,20 +64,32 @@ func main() {
 	// Download all data for the last 30 days
 	// err = downloader.DownloadAllData(30)
 	endDate := time.Now().Format("2006-01-02")
-	startDate := time.Now().AddDate(0, 0, -DAYs_BACK).Format("2006-01-02")
+	startDate := time.Now().AddDate(0, 0, -DAYS_BACK).Format("2006-01-02")
 
 	err = downloader.DownloadProfile()
 	if err != nil {
 		log.Fatal("Failed to download profile:", err)
 	}
 
-	heartData, err := downloader.DownloadActivities("heart", startDate, endDate)
+	// heartData, err := downloader.DownloadActivities("heart", startDate, endDate)
+	// if err != nil {
+	// 	log.Fatal("Failed to download heart rate data:", err)
+	// }
 	stepData, err := downloader.DownloadActivities("steps", startDate, endDate)
 	if err != nil {
-		log.Fatal("Failed to download heart rate data:", err)
+		log.Fatal("Failed to download steps data:", err)
 	}
-	fmt.Println(heartData)
-	fmt.Println(stepData)
+
+	// Print out the data for debugging
+	if stepData != nil {
+		stepsDataObj, ok := stepData.(models.StepsData)
+		if !ok {
+			log.Fatal("Failed to convert data to StepsData tyep")
+		}
+		processedData := stepsDataObj.ProcessData()
+
+		server.Store.StepsData = processedData
+	}
 
 	server.Serve()
 }

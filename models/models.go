@@ -401,7 +401,12 @@ func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interf
 		}
 		data = heartData
 
-	// case "steps":
+	case "steps":
+		var stepsData StepsData
+		if err := json.Unmarshal(bodyBytes, &stepsData); err != nil {
+			return nil, fmt.Errorf("failed to parse steps data JSON for %s: %v", endpoint, err)
+		}
+		data = stepsData
 	default:
 		var genericData map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &genericData); err != nil {
@@ -426,33 +431,9 @@ func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interf
 	}
 
 	return data, nil
-
-	// fmt.Printf("%s data downloaded successfully!\n", endpoint)
-	// return nil
 }
 
-// DownloadAllData downloads all types of data
-// func (fd *FitbitDownloader) DownloadAllData(daysBack int) error {
-// 	endDate := time.Now().Format("2006-01-02")
-// 	startDate := time.Now().AddDate(0, 0, -daysBack).Format("2006-01-02")
 
-// 	// Download each type of data
-// 	err := fd.DownloadProfile()
-// 	if err != nil {
-// 		return fmt.Errorf("failed to download profile: %v", err)
-// 	}
-
-// 	activities := []string{"steps", "distance", "floors", "calories", "elevation", "minutesSedentary", "minutesLightlyActive", "minutesFairlyActive", "minutesVeryActive", "heart"}
-// 	for _, activity := range activities {
-// 		err = fd.DownloadActivities(activity, startDate, endDate)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to download activities: %v", err)
-// 		}
-// 	}
-
-// 	fmt.Printf("All data downloaded successfully to the '%s' directory!\n", fd.DataDir)
-// 	return nil
-// }
 
 // TODO move these into a separate file or package
 type HeartRateData struct {
@@ -471,7 +452,6 @@ type HeartRateData struct {
 		} `json:"value"`
 	} `json:"activities-heart"`
 }
-
 
 
 type StepsData struct {
@@ -499,6 +479,27 @@ func (s *StepsData) GetSteps() []StepEntry {
 		}
 	}
 	return entries
+}
+
+func (s *StepsData) ProcessData() ChartData {
+	// Convert StepsData to ChartData for visualization
+	chart := ChartData{
+		Title:    "Steps Over Time",
+		Subtitle: "Daily step count for the last 30 days",
+		XAxis:    make([]string, len(s.ActivitiesSteps)),
+		Series:   map[string][]int{"Steps": make([]int, len(s.ActivitiesSteps))},
+	}
+
+	for i, entry := range s.ActivitiesSteps {
+		chart.XAxis[i] = entry.DateTime
+		val, err := strconv.Atoi(entry.Value)
+		if err != nil {
+			val = 0 // handle error as needed
+		}
+		chart.Series["Steps"][i] = val
+	}
+
+	return chart
 }
 
 // TODO add methods that transform data for visualization

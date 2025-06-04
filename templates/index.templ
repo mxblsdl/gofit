@@ -1,17 +1,19 @@
 package templates
 
 templ Index() {
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<title>Go ECharts Demo</title>
-			<link rel="stylesheet" href="/static/css/styles.css"/>
-		</head>
-		<body>
-			<h1>Go EChart Demo</h1>
-			<p>Click on the links below to view different chart types:</p>
-			<a href="/line">Line Chart</a>
-			<a href="/bar">Bar Chart</a>
-		</body>
-	</html>
+	   @Layout("Home") {
+        <h1>Fitbit Data</h1>
+        <p>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</p>
+        
+        <div class="chart-links">
+            <a href="/line?type=steps" class="card">
+                <h2>Steps Chart</h2>
+                <p>View your daily step count</p>
+            </a>
+            <a href="/line?type=heart" class="card">
+                <h2>Heart Rate Chart</h2>
+                <p>Monitor your heart rate patterns</p>
+            </a>
+        </div>
+    }
 }

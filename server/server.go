@@ -7,28 +7,35 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
+	"github.com/gofit/models"
 	"github.com/gofit/templates"
 )
 
+// TODO simplify or generalize this, maybe rename?
+var Store = models.DataStore{
+	StepsData: models.ChartData{},
+}
+
 // generateLineChart creates a sample line chart
-func generateLineChart() *charts.Line {
+func generateLineChart(data models.ChartData) *charts.Line {
 	line := charts.NewLine()
 	line.SetGlobalOptions(
 		charts.WithInitializationOpts(opts.Initialization{Theme: "macarons"}),
 		charts.WithTitleOpts(opts.Title{
-			Title:    "Sample Line Chart",
-			Subtitle: "Generated with go-echarts",
+			Title:    data.Title,
+			Subtitle: data.Subtitle,
 		}),
 	)
 
 	// X-axis data
-	xAxis := []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+	line.SetXAxis(data.XAxis)
 
-	// Sample data series
-	line.SetXAxis(xAxis).
-		AddSeries("Series A", generateLineItems([]int{120, 200, 150, 80, 70, 110, 130})).
-		AddSeries("Series B", generateLineItems([]int{60, 80, 65, 130, 80, 120, 100})).
-		SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}))
+	// Add each series from the data
+	for name, values := range data.Series {
+		line.AddSeries(name, generateLineItems(values))
+	}
+
+	line.SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}))
 
 	return line
 }
@@ -73,8 +80,19 @@ func generateBarItems(data []int) []opts.BarData {
 
 // HTTP handlers
 func lineChartHandler(w http.ResponseWriter, r *http.Request) {
-	line := generateLineChart()
-	line.Render(w)
+	chartType := r.URL.Query().Get("type")
+
+	var data models.ChartData
+	switch chartType {
+	case "steps":
+		data = Store.GetStepsData()
+	default:
+		// data = Store.GetHeartRateData()
+	}
+
+	component := templates.LineChart(data)
+	component.Render(r.Context(), w)
+	// line.Render(w)
 }
 
 func barChartHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,8 +105,8 @@ func Serve() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Set up HTTP routes
-	index := templates.Index()
-	http.Handle("/", templ.Handler(index))
+	http.Handle("/", templ.Handler(templates.Index()))
+	http.Handle("/profile", templ.Handler(templates.Profile()))
 	http.HandleFunc("/line", lineChartHandler)
 	http.HandleFunc("/bar", barChartHandler)
 
