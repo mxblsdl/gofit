@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -79,7 +81,7 @@ func generateBarItems(data []int) []opts.BarData {
 }
 
 // HTTP handlers
-func lineChartHandler(w http.ResponseWriter, r *http.Request) {
+func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 	chartType := r.URL.Query().Get("type")
 
 	var data models.ChartData
@@ -89,9 +91,19 @@ func lineChartHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		// data = Store.GetHeartRateData()
 	}
+	line := generateLineChart(data)
 
-	component := templates.LineChart(data)
-	component.Render(r.Context(), w)
+	var buf bytes.Buffer
+	err := line.Render(&buf)
+	if err != nil {
+		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
+		return
+	}
+
+	component := templates.LineChart(template.HTML(buf.String()), data.Title)
+	templ.Handler(component).ServeHTTP(w, r)
+	// component.Render(r.Context(), w)
+	// line.Render(w)
 	// line.Render(w)
 }
 
@@ -107,8 +119,13 @@ func Serve() {
 	// Set up HTTP routes
 	http.Handle("/", templ.Handler(templates.Index()))
 	http.Handle("/profile", templ.Handler(templates.Profile()))
-	http.HandleFunc("/line", lineChartHandler)
-	http.HandleFunc("/bar", barChartHandler)
+
+	http.HandleFunc("/line", LineChartHandler)
+	// http.Handle("/line", templ.Handler(templates.LineChart()))
+	// http.HandleFunc("/bar", barChartHandler)
+
+	// Chart api endpoints
+	// http.HandleFunc("/api/line", apiLineChartHandler)
 
 	port := "8080"
 	log.Printf("Server starting on http://localhost:%s", port)

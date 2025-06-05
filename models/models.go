@@ -433,8 +433,6 @@ func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interf
 	return data, nil
 }
 
-
-
 // TODO move these into a separate file or package
 type HeartRateData struct {
 	ActivitiesHeart []struct {
@@ -452,7 +450,6 @@ type HeartRateData struct {
 		} `json:"value"`
 	} `json:"activities-heart"`
 }
-
 
 type StepsData struct {
 	ActivitiesSteps []struct {
