@@ -46,6 +46,26 @@ type FitbitDownloader struct {
 	DataDir   string
 }
 
+type ProfileData struct {
+	User UserProfile `json:"user"`
+}
+
+type UserProfile struct {
+	Age               int     `json:"age"`
+	AverageDailySteps int     `json:"averageDailySteps"`
+	DateOfBirth       string  `json:"dateOfBirth"`
+	DisplayName       string  `json:"displayName"`
+	FirstName         string  `json:"firstName"`
+	FullName          string  `json:"fullName"`
+	LastName          string  `json:"lastName"`
+	Gender            string  `json:"gender"`
+	Height            float64 `json:"height"`
+	HeightUnit        string  `json:"heightUnit"`
+	TimeZone          string  `json:"timezone"`
+	Weight            float64 `json:"weight"`
+	WeightUnit        string  `json:"weightUnit"`
+}
+
 func (fd *FitbitDownloader) ClearAllData() error {
 	// Clear all data files in the data directory
 	files, err := os.ReadDir(fd.DataDir)
@@ -284,10 +304,10 @@ func (fd *FitbitDownloader) refreshAccessToken() error {
 }
 
 // DownloadProfile downloads user profile data
-func (fd *FitbitDownloader) DownloadProfile() error {
+func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
 	err := fd.refreshAccessToken()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("Downloading user profile data...")
@@ -295,7 +315,7 @@ func (fd *FitbitDownloader) DownloadProfile() error {
 	url := "https://api.fitbit.com/1/user/-/profile.json"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create profile request: %v", err)
+		return nil, fmt.Errorf("failed to create profile request: %v", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+fd.TokenInfo.AccessToken)
@@ -303,42 +323,31 @@ func (fd *FitbitDownloader) DownloadProfile() error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("profile request failed: %v", err)
+		return nil, fmt.Errorf("profile request failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to download profile data: %d %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("failed to download profile data: %d %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	// Read the response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read profile response: %v", err)
+		return nil, fmt.Errorf("failed to read profile response: %v", err)
 	}
 
 	// Indent the JSON for better readability
-	var profileData interface{}
+	var profileData ProfileData
 	err = json.Unmarshal(bodyBytes, &profileData)
 	if err != nil {
-		return fmt.Errorf("failed to parse profile JSON: %v", err)
+		return nil, fmt.Errorf("failed to parse profile JSON: %v", err)
 	}
 
-	formattedJSON, err := json.MarshalIndent(profileData, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to format profile JSON: %v", err)
-	}
+	fmt.Printf("Profile data for: %s downloaded successfully\n", string(profileData.User.FullName))
 
-	// Save to file
-	filename := filepath.Join(fd.DataDir, "profile.json")
-	err = os.WriteFile(filename, formattedJSON, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to save profile data: %v", err)
-	}
-
-	fmt.Println("Profile data downloaded successfully!")
-	return nil
+	return &profileData, nil
 }
 
 // DownloadActivities downloads activity data for a date range
@@ -413,9 +422,6 @@ func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interf
 			return nil, fmt.Errorf("failed to parse %s data JSON for %s: %v", activity, endpoint, err)
 		}
 		data = genericData
-
-		// return nil, fmt.Errorf("unsupported activity type: %s", activity)
-		// return data, nil
 	}
 
 	// TODO remove once not needed

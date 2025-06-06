@@ -40,6 +40,8 @@ func main() {
 	DAYS_BACK := 5
 
 	// Replace with your own Client ID and Client Secret from Fitbit Developer Portal
+	// TODO Have a login page where a user is able to enter their Fitbit credentials
+	// and store them in a database
 	clientID := os.Getenv("FITBIT_ID")
 	clientSecret := os.Getenv("FITBIT_SECRET")
 
@@ -66,9 +68,12 @@ func main() {
 	endDate := time.Now().Format("2006-01-02")
 	startDate := time.Now().AddDate(0, 0, -DAYS_BACK).Format("2006-01-02")
 
-	err = downloader.DownloadProfile()
+	profileData, err := downloader.DownloadProfile()
 	if err != nil {
 		log.Fatal("Failed to download profile:", err)
+	}
+	if profileData != nil {
+		server.Store.ProfileData = *profileData
 	}
 
 	// heartData, err := downloader.DownloadActivities("heart", startDate, endDate)

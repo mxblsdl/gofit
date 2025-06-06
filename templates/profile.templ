@@ -1,13 +1,15 @@
 package templates
 
+import "github.com/gofit/models"
+
 // TODO load the profile data into this page
-templ Profile() {
+templ Profile(data models.ProfileData) {
 @Layout("Profile") {
 <h1>User Profile</h1>
 <div class="profile-container">
     <div class="profile-info">
         <h2>Personal Information</h2>
-        <p>Name: <span id="user-name">Loading...</span></p>
+        <p>Name: <span id="user-name">{data.User.FullName}</span></p>
         <p>Age: <span id="user-age">Loading...</span></p>
         <p>Height: <span id="user-height">Loading...</span></p>
         <p>Weight: <span id="user-weight">Loading...</span></p>

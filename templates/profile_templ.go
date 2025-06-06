@@ -8,8 +8,10 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/gofit/models"
+
 // TODO load the profile data into this page
-func Profile() templ.Component {
+func Profile(data models.ProfileData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -42,7 +44,20 @@ func Profile() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>User Profile</h1><div class=\"profile-container\"><div class=\"profile-info\"><h2>Personal Information</h2><p>Name: <span id=\"user-name\">Loading...</span></p><p>Age: <span id=\"user-age\">Loading...</span></p><p>Height: <span id=\"user-height\">Loading...</span></p><p>Weight: <span id=\"user-weight\">Loading...</span></p></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>User Profile</h1><div class=\"profile-container\"><div class=\"profile-info\"><h2>Personal Information</h2><p>Name: <span id=\"user-name\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.User.FullName)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `templates/profile.templ`, Line: 12, Col: 57}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</span></p><p>Age: <span id=\"user-age\">Loading...</span></p><p>Height: <span id=\"user-height\">Loading...</span></p><p>Weight: <span id=\"user-weight\">Loading...</span></p></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

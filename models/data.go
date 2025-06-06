@@ -10,8 +10,9 @@ type ChartData struct {
 }
 
 type DataStore struct {
-	StepsData ChartData
-	mu        sync.RWMutex
+	StepsData   ChartData
+	ProfileData ProfileData
+	mu          sync.RWMutex
 }
 
 // UpdateStepsData safely updates steps chart data

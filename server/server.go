@@ -15,7 +15,8 @@ import (
 
 // TODO simplify or generalize this, maybe rename?
 var Store = models.DataStore{
-	StepsData: models.ChartData{},
+	StepsData:   models.ChartData{},
+	ProfileData: models.ProfileData{},
 }
 
 // generateLineChart creates a sample line chart
@@ -102,9 +103,14 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 
 	component := templates.LineChart(template.HTML(buf.String()), data.Title)
 	templ.Handler(component).ServeHTTP(w, r)
-	// component.Render(r.Context(), w)
-	// line.Render(w)
-	// line.Render(w)
+}
+
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	profileData := Store.ProfileData
+
+	// Render the profile template with the profile data
+	component := templates.Profile(profileData)
+	templ.Handler(component).ServeHTTP(w, r)
 }
 
 func barChartHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +124,7 @@ func Serve() {
 
 	// Set up HTTP routes
 	http.Handle("/", templ.Handler(templates.Index()))
-	http.Handle("/profile", templ.Handler(templates.Profile()))
+	http.HandleFunc("/profile", ProfileHandler)
 
 	http.HandleFunc("/line", LineChartHandler)
 	// http.Handle("/line", templ.Handler(templates.LineChart()))
