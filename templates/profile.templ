@@ -10,9 +10,9 @@ templ Profile(data models.ProfileData) {
     <div class="profile-info">
         <h2>Personal Information</h2>
         <p>Name: <span id="user-name">{data.User.FullName}</span></p>
-        <p>Age: <span id="user-age">Loading...</span></p>
-        <p>Height: <span id="user-height">Loading...</span></p>
-        <p>Weight: <span id="user-weight">Loading...</span></p>
+        <p>Age: <span id="user-age">{data.User.Age}</span></p>
+        <p>Height: <span id="user-height">{data.User.Height}.</span></p>
+        <p>Weight: <span id="user-weight">{data.User.Weight}</span></p>
     </div>
 </div>
 }

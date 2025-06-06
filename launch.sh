@@ -1,0 +1,3 @@
+templ generate --watch &
+
+air
