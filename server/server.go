@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -17,6 +18,30 @@ import (
 var Store = models.DataStore{
 	StepsData:   models.ChartData{},
 	ProfileData: models.ProfileData{},
+}
+
+// HTTP handlers
+func LineChartHandler(w http.ResponseWriter, r *http.Request) {
+	chartType := r.URL.Query().Get("type")
+
+	var data models.ChartData
+	switch chartType {
+	case "steps":
+		data = Store.GetStepsData()
+	default:
+		// data = Store.GetHeartRateData()
+	}
+	line := generateLineChart(data)
+
+	var buf bytes.Buffer
+	err := line.Render(&buf)
+	if err != nil {
+		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
+		return
+	}
+
+	component := templates.LineChart(template.HTML(buf.String()), data.Title)
+	templ.Handler(component).ServeHTTP(w, r)
 }
 
 // generateLineChart creates a sample line chart
@@ -52,59 +77,6 @@ func generateLineItems(data []int) []opts.LineData {
 	return items
 }
 
-// generateBarChart creates a sample bar chart
-func generateBarChart() *charts.Bar {
-	bar := charts.NewBar()
-	bar.SetGlobalOptions(
-		charts.WithInitializationOpts(opts.Initialization{Theme: "macarons"}),
-		charts.WithTitleOpts(opts.Title{
-			Title:    "Sample Bar Chart",
-			Subtitle: "Monthly Sales Data",
-		}),
-	)
-
-	// X-axis data
-	months := []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun"}
-
-	bar.SetXAxis(months).
-		AddSeries("Sales", generateBarItems([]int{2340, 1890, 2890, 2340, 2890, 2890}))
-
-	return bar
-}
-
-// generateBarItems converts int slice to BarData slice
-func generateBarItems(data []int) []opts.BarData {
-	items := make([]opts.BarData, 0)
-	for _, v := range data {
-		items = append(items, opts.BarData{Value: v})
-	}
-	return items
-}
-
-// HTTP handlers
-func LineChartHandler(w http.ResponseWriter, r *http.Request) {
-	chartType := r.URL.Query().Get("type")
-
-	var data models.ChartData
-	switch chartType {
-	case "steps":
-		data = Store.GetStepsData()
-	default:
-		// data = Store.GetHeartRateData()
-	}
-	line := generateLineChart(data)
-
-	var buf bytes.Buffer
-	err := line.Render(&buf)
-	if err != nil {
-		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
-		return
-	}
-
-	component := templates.LineChart(template.HTML(buf.String()), data.Title)
-	templ.Handler(component).ServeHTTP(w, r)
-}
-
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profileData := Store.ProfileData
 
@@ -113,9 +85,10 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	templ.Handler(component).ServeHTTP(w, r)
 }
 
-func barChartHandler(w http.ResponseWriter, r *http.Request) {
-	bar := generateBarChart()
-	bar.Render(w)
+func AuthHandler(w http.ResponseWriter, r *http.Request) {
+	// This is a placeholder for the authentication handler
+	// In a real application, you would redirect to Fitbit's OAuth flow here
+	fmt.Println("test")
 }
 
 func Serve() {
@@ -123,7 +96,10 @@ func Serve() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Set up HTTP routes
-	http.Handle("/", templ.Handler(templates.Index()))
+	http.Handle("/", templ.Handler(templates.Landing()))
+
+	http.HandleFunc("/auth", AuthHandler)
+	// http.Handle("/", templ.Handler(templates.Index()))
 	http.HandleFunc("/profile", ProfileHandler)
 
 	http.HandleFunc("/line", LineChartHandler)

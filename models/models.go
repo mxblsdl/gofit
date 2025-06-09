@@ -8,12 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/cli/browser"
 )
 
 // Config holds the application configuration
@@ -107,8 +106,11 @@ func (fd *FitbitDownloader) StartAuthFlow() error {
 	fmt.Println("Opening browser for authorization:", fullAuthURL)
 
 	// Open the authorization URL in the browser
-	err := browser.OpenURL(fullAuthURL)
-	if err != nil {
+	// err := os.Setenv("BROWSER", "chromium") // or "google-chrome", "chromium", etc.
+	cmd := exec.Command("chromium", fullAuthURL) // Use xdg-open for Linux, or change to "open" for macOS
+	fmt.Println("If no browser opens, please copy and paste the following URL into your browser:")
+	fmt.Println(fullAuthURL)
+	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to open browser: %v", err)
 	}
 
@@ -123,8 +125,9 @@ func (fd *FitbitDownloader) StartAuthFlow() error {
 
 // startCallbackServer starts a local server to receive the OAuth callback
 func (fd *FitbitDownloader) startCallbackServer(authCodeChan chan<- string, errChan chan<- error) {
-	server := &http.Server{Addr: ":8080"}
+	server := &http.Server{Addr: "localhost:8080"}
 
+	// ERROR handling the index page for the server
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
