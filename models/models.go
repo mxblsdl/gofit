@@ -409,12 +409,10 @@ func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
 	return &profileData, nil
 }
 
-func (fd *FitbitDownloader) DownloadActivities(activity, startDate, endDate string) (*ActivityData, error) {
-	// If no dates are provided, use the last 30 days
-	if startDate == "" || endDate == "" {
-		endDate = time.Now().Format("2006-01-02")
-		startDate = time.Now().AddDate(0, 0, -30).Format("2006-01-02")
-	}
+func (fd *FitbitDownloader) DownloadActivities(activity string, days_back int) (*ActivityData, error) {
+
+	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().AddDate(0, 0, -days_back).Format("2006-01-02")
 
 	fmt.Printf("Reading %s data from %s to %s...\n", activity, startDate, endDate)
 

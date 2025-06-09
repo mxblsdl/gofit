@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
+	"github.com/gofit/downloader"
 	"github.com/gofit/models"
 	"github.com/gofit/templates"
 )
@@ -112,14 +114,47 @@ func AuthSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write the credentials to a file or database
-	filePath := filepath.Join("fitbit_data", "credentials.json")
+	filePath := filepath.Join("fitbit_data", "account_info.json")
 	account_data, err := json.MarshalIndent(account_info, "", "  ")
 	os.WriteFile(filePath, account_data, 0644)
 
 	// fmt.Printf("Received Fitbit ID: %s, Secret: %s\n", fitbitID, fitbitSecret)
+	// TODO put this logic into a function so it can be used in teh index endpoint as well
+	downloader := downloader.NewFitbitDownloader(account_info.ClientID, account_info.ClientSecret, "fitbit_data")
+
+	// fmt.Print(downloader)
+
+	// Check if we already have token information
+	err = downloader.LoadTokenInfo()
+	if err != nil {
+		// First time authentication (only needed once)
+		// This will open your browser for authorization
+		fmt.Println("No token information found. Starting authorization flow...")
+		err = downloader.StartAuthFlow()
+		if err != nil {
+			log.Fatal("Authorization failed:", err)
+		}
+	}
+
+	profileData, err := downloader.DownloadProfile()
+	if err != nil {
+		log.Fatal("Failed to download profile:", err)
+	}
+	if profileData != nil {
+		Store.ProfileData = *profileData
+	}
+
+	DAYS_BACK := 5
+	stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
+	if err != nil {
+		log.Fatal("Failed to download steps data:", err)
+	}
+	if stepData != nil {
+		processedData := stepData.ProcessData()
+		Store.StepsData = processedData
+	}
 
 	// Respond to the client
-	// TODO create a new downloader instance and start data pulls
 	w.Header().Set("Content-Type", "text/html")
 	templ.Handler(templates.Index()).ServeHTTP(w, r)
 }
