@@ -8,7 +8,7 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Nav() templ.Component {
+func Auth() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +29,7 @@ func Nav() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<nav class=\"navbar\"><div class=\"logo\"><a href=\"/\">GoFit</a></div><ul class=\"nav-links\"><li><a href=\"/\">Home</a></li><li><a href=\"/profile\">Profile</a></li></ul></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<head><link rel=\"stylesheet\" href=\"/static/css/auth.css\"><link rel=\"stylesheet\" href=\"/static/css/styles.css\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><script src=\"https://unpkg.com/htmx.org@2.0.4\" integrity=\"sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+\" crossorigin=\"anonymous\"></script></head><body><h1>Welcome to Fitbit Data Dashboard</h1><p>Explore your health and fitness data with ease.</p><div class=\"auth-form\"><form id=\"auth-form\" hx-post=\"/auth-submit\" hx-swap=\"innerHTML\" hx-target=\"body\"><p>Input your Client ID</p><input type=\"text\" name=\"fitbit_id\" placeholder=\"Enter Fitbit ID\" required autocomplete=\"off\"><p>Input your Client Secret</p><input type=\"password\" name=\"fitbit_secret\" placeholder=\"Enter fitbit secret\" required autocomplete=\"new-password\"> <button type=\"submit\">Submit</button></form></div></body>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

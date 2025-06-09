@@ -39,14 +39,11 @@ func main() {
 	}
 	DAYS_BACK := 5
 
-	// Replace with your own Client ID and Client Secret from Fitbit Developer Portal
-	// TODO Have a login page where a user is able to enter their Fitbit credentials
-	// and store them in a database
 	clientID := os.Getenv("FITBIT_ID")
 	clientSecret := os.Getenv("FITBIT_SECRET")
 
 	downloader := NewFitbitDownloader(clientID, clientSecret)
-	err = downloader.ClearAllData()
+	// err = downloader.ClearAllData()
 	if err != nil {
 		log.Fatal("Failed to clear existing data:", err)
 	}
@@ -63,8 +60,6 @@ func main() {
 		}
 	}
 
-	// Download all data for the last 30 days
-	// err = downloader.DownloadAllData(30)
 	endDate := time.Now().Format("2006-01-02")
 	startDate := time.Now().AddDate(0, 0, -DAYS_BACK).Format("2006-01-02")
 
@@ -76,25 +71,17 @@ func main() {
 		server.Store.ProfileData = *profileData
 	}
 
-	// heartData, err := downloader.DownloadActivities("heart", startDate, endDate)
-	// if err != nil {
-	// 	log.Fatal("Failed to download heart rate data:", err)
-	// }
 	stepData, err := downloader.DownloadActivities("steps", startDate, endDate)
 	if err != nil {
 		log.Fatal("Failed to download steps data:", err)
 	}
-
-	// Print out the data for debugging
 	if stepData != nil {
-		stepsDataObj, ok := stepData.(models.StepsData)
-		if !ok {
-			log.Fatal("Failed to convert data to StepsData tyep")
-		}
-		processedData := stepsDataObj.ProcessData()
-
+		processedData := stepData.ProcessData()
 		server.Store.StepsData = processedData
 	}
+
+	// Downloading other activities to check their format
+	_, err = downloader.DownloadActivities("calories", startDate, endDate)
 
 	server.Serve()
 }

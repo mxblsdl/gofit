@@ -17,8 +17,8 @@ import (
 
 // Config holds the application configuration
 type Config struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
+	ClientID     string `json:"client_id" validate:"required"`
+	ClientSecret string `json:"client_secret" validate:"required"`
 	RedirectURI  string `json:"redirect_uri"`
 }
 
@@ -63,6 +63,49 @@ type UserProfile struct {
 	TimeZone          string  `json:"timezone"`
 	Weight            float64 `json:"weight"`
 	WeightUnit        string  `json:"weightUnit"`
+}
+
+type ActivityData struct {
+	Activities []ActivityEntry `json:"activities-steps"`
+}
+
+type ActivityEntry struct {
+	DateTime string `json:"dateTime"`
+	Value    string `json:"value"`
+}
+
+func (s *ActivityData) GetValues() []ActivityEntry {
+	entries := make([]ActivityEntry, len(s.Activities))
+	for i, activity := range s.Activities {
+		entries[i] = ActivityEntry{
+			DateTime: activity.DateTime,
+			Value:    activity.Value,
+		}
+	}
+	return entries
+}
+
+func (s *ActivityData) ProcessData() ChartData {
+	// Convert StepsData to ChartData for visualization
+	// TODO figure out how I can generalize this method to handle different types of data
+	chart := ChartData{
+		Title:    "Steps Over Time",
+		Subtitle: "Daily step count for the last 30 days",
+		XAxis:    make([]string, len(s.Activities)),
+		Series:   map[string][]int{"Steps": make([]int, len(s.Activities))},
+	}
+
+	for i, entry := range s.Activities {
+		val, err := strconv.Atoi(entry.Value)
+		if err != nil {
+			val = 0 // or handle error as needed
+		}
+
+		chart.XAxis[i] = entry.DateTime
+		chart.Series["Steps"][i] = val
+	}
+
+	return chart
 }
 
 func (fd *FitbitDownloader) ClearAllData() error {
@@ -272,6 +315,9 @@ func (fd *FitbitDownloader) refreshAccessToken() error {
 		req.Header.Set("Authorization", "Basic "+authValue)
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+		if err != nil {
+			return fmt.Errorf("failed to create refresh token request: %v", err)
+		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
@@ -281,7 +327,17 @@ func (fd *FitbitDownloader) refreshAccessToken() error {
 
 		if resp.StatusCode != 200 {
 			bodyBytes, _ := io.ReadAll(resp.Body)
-			return fmt.Errorf("failed to refresh access token: %d %s", resp.StatusCode, string(bodyBytes))
+			fmt.Printf("Failed to refresh access token: %d %s\n", resp.StatusCode, string(bodyBytes))
+
+			// Remove the old token file
+			tokenFile := filepath.Join(fd.DataDir, "token_info.json")
+			if err := os.Remove(tokenFile); err != nil {
+				return fmt.Errorf("failed to remove token file: %v", err)
+			}
+
+			// Restart the authentication process
+			fmt.Println("Starting reauthentication process...")
+			return fd.StartAuthFlow()
 		}
 
 		var tokenResp TokenResponse
@@ -353,8 +409,7 @@ func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
 	return &profileData, nil
 }
 
-// DownloadActivities downloads activity data for a date range
-func (fd *FitbitDownloader) DownloadActivities(activity, startDate, endDate string) (interface{}, error) {
+func (fd *FitbitDownloader) DownloadActivities(activity, startDate, endDate string) (*ActivityData, error) {
 	// If no dates are provided, use the last 30 days
 	if startDate == "" || endDate == "" {
 		endDate = time.Now().Format("2006-01-02")
@@ -374,7 +429,7 @@ func (fd *FitbitDownloader) DownloadActivities(activity, startDate, endDate stri
 	return data, nil
 }
 
-func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interface{}, error) {
+func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (*ActivityData, error) {
 	err := fd.refreshAccessToken()
 	if err != nil {
 		return nil, err
@@ -403,109 +458,23 @@ func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (interf
 		return nil, fmt.Errorf("failed to read response for %s: %v", endpoint, err)
 	}
 
-	var data interface{}
+	var data ActivityData
 
-	switch activity {
-	case "heart":
-		var heartData HeartRateData
-		if err := json.Unmarshal(bodyBytes, &heartData); err != nil {
-			return nil, fmt.Errorf("failed to parse heart data JSON for %s: %v", endpoint, err)
-		}
-		data = heartData
-
-	case "steps":
-		var stepsData StepsData
-		if err := json.Unmarshal(bodyBytes, &stepsData); err != nil {
-			return nil, fmt.Errorf("failed to parse steps data JSON for %s: %v", endpoint, err)
-		}
-		data = stepsData
-	default:
-		var genericData map[string]interface{}
-		if err := json.Unmarshal(bodyBytes, &genericData); err != nil {
-			return nil, fmt.Errorf("failed to parse %s data JSON for %s: %v", activity, endpoint, err)
-		}
-		data = genericData
+	if err := json.Unmarshal(bodyBytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to parse steps data JSON for %s: %v", endpoint, err)
 	}
 
 	// TODO remove once not needed
-	formattedJSON, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("failed to format JSON for %s: %v", endpoint, err)
-	}
+	// formattedJSON, err := json.MarshalIndent(data, "", "  ")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to format JSON for %s: %v", endpoint, err)
+	// }
 
-	filePath := filepath.Join(fd.DataDir, filename)
-	err = os.WriteFile(filePath, formattedJSON, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save %s data: %v", endpoint, err)
-	}
+	// filePath := filepath.Join(fd.DataDir, filename)
+	// err = os.WriteFile(filePath, formattedJSON, 0644)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to save %s data: %v", endpoint, err)
+	// }
 
-	return data, nil
+	return &data, nil
 }
-
-// TODO move these into a separate file or package
-type HeartRateData struct {
-	ActivitiesHeart []struct {
-		DateTime string `json:"dateTime"`
-		Value    struct {
-			CustomHeartRateZones []any `json:"customHeartRateZones"`
-			HeartRateZones       []struct {
-				CaloriesOut float64 `json:"caloriesOut"`
-				Max         int     `json:"max"`
-				Min         int     `json:"min"`
-				Minutes     int     `json:"minutes"`
-				Name        string  `json:"name"`
-			} `json:"heartRateZones"`
-			RestingHeartRate int `json:"restingHeartRate"`
-		} `json:"value"`
-	} `json:"activities-heart"`
-}
-
-type StepsData struct {
-	ActivitiesSteps []struct {
-		DateTime string `json:"dateTime"`
-		Value    string `json:"value"`
-	} `json:"activities-steps"`
-}
-
-type StepEntry struct {
-	DateTime string `json:"dateTime"`
-	Value    int    `json:"value"`
-}
-
-func (s *StepsData) GetSteps() []StepEntry {
-	entries := make([]StepEntry, len(s.ActivitiesSteps))
-	for i, activity := range s.ActivitiesSteps {
-		val, err := strconv.Atoi(activity.Value)
-		if err != nil {
-			val = 0 // or handle error as needed
-		}
-		entries[i] = StepEntry{
-			DateTime: activity.DateTime,
-			Value:    val,
-		}
-	}
-	return entries
-}
-
-func (s *StepsData) ProcessData() ChartData {
-	// Convert StepsData to ChartData for visualization
-	chart := ChartData{
-		Title:    "Steps Over Time",
-		Subtitle: "Daily step count for the last 30 days",
-		XAxis:    make([]string, len(s.ActivitiesSteps)),
-		Series:   map[string][]int{"Steps": make([]int, len(s.ActivitiesSteps))},
-	}
-
-	for i, entry := range s.ActivitiesSteps {
-		chart.XAxis[i] = entry.DateTime
-		val, err := strconv.Atoi(entry.Value)
-		if err != nil {
-			val = 0 // handle error as needed
-		}
-		chart.Series["Steps"][i] = val
-	}
-
-	return chart
-}
-
-// TODO add methods that transform data for visualization
