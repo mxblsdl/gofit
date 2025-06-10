@@ -54,7 +54,7 @@ func Error(message string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</p><form id=\"remove\" action=\"/remove-credentials\" method=\"post\"><button type=\"submit\">Remove Credentials</button></form></div><script>\n    htmx.find(\"#remove\").addEventListener(\"click\", function (event) {\n        event.preventDefault();\n        console.log(\"Removing credentials...\");\n    });\n    // htmx.ajax(\"POST\", \"/remove-credentials\", { target: \"body\" });\n</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</p><form id=\"remove\" hx-post=\"/remove-secrets\" hx-target=\"body\" hx-swap=\"outerHTML\"><button type=\"submit\">Remove Credentials</button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -105,6 +105,7 @@ func AuthSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	account_info := models.Config{
 		ClientID:     r.FormValue("fitbit_id"),
 		ClientSecret: r.FormValue("fitbit_secret"),
+		// RedirectURI:  "http://localhost:8080",
 	}
 
 	// write the credentials to a file or database
@@ -162,6 +163,24 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	templ.Handler(component).ServeHTTP(w, r)
 }
 
+func removeSecretsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method)
+
+	account_info_file := filepath.Join("fitbit_data", "account_info.json")
+	if _, err := os.Stat(account_info_file); os.IsNotExist(err) {
+		http.Error(w, "Account info not found", http.StatusNotFound)
+		return
+	}
+	// If account_info exists, remove it
+	err := os.Remove(account_info_file)
+	if err != nil {
+		http.Error(w, "Failed to remove account info: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.Println("Account info removed successfully")
+	http.Redirect(w, r, "/auth", http.StatusFound)
+}
+
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Endpoint: %s, Method: %s", r.URL.Path, r.Method)
@@ -180,6 +199,7 @@ func Serve() {
 	http.Handle("/auth-submit", loggingMiddleware(http.HandlerFunc(AuthSubmitHandler)))
 	http.Handle("/profile", loggingMiddleware(http.HandlerFunc(ProfileHandler)))
 	http.Handle("/line", loggingMiddleware(http.HandlerFunc(LineChartHandler)))
+	http.Handle("/remove-secrets", loggingMiddleware(http.HandlerFunc(removeSecretsHandler)))
 
 	port := "8080"
 	log.Printf("Server starting on http://localhost:%s", port)
@@ -193,6 +213,6 @@ func Serve() {
 
 // TODO: utilize other data from the downloader
 // TODO: some type of error when client secret and id dont work
-// TODO: change how charts look at little DateOfBirth
+// TODO: change how charts look at little
 
 // Set days back to be a variable??

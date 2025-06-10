@@ -28,7 +28,7 @@ func NewFitbitDownloader(clientID, clientSecret, dataDir string) *models.FitbitD
 		Config: models.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			RedirectURI:  "http://localhost:8081",
+			RedirectURI:  "http://localhost:8080",
 		},
 		DataDir: dataDir,
 	}

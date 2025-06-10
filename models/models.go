@@ -110,25 +110,25 @@ func (s *ActivityData) ProcessData() ChartData {
 	return chart
 }
 
-func (fd *FitbitDownloader) ClearAllData() error {
-	// Clear all data files in the data directory
-	files, err := os.ReadDir(fd.DataDir)
-	if err != nil {
-		return fmt.Errorf("failed to read data directory: %w", err)
-	}
+// func (fd *FitbitDownloader) ClearAllData() error {
+// 	// Clear all data files in the data directory
+// 	files, err := os.ReadDir(fd.DataDir)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to read data directory: %w", err)
+// 	}
 
-	for _, file := range files {
-		if file.Name() == "token_info.json" {
-			continue
-		}
-		err := os.Remove(fd.DataDir + "/" + file.Name())
-		if err != nil {
-			return fmt.Errorf("failed to remove file %s: %w", file.Name(), err)
-		}
-	}
+// 	for _, file := range files {
+// 		if file.Name() == "token_info.json" {
+// 			continue
+// 		}
+// 		err := os.Remove(fd.DataDir + "/" + file.Name())
+// 		if err != nil {
+// 			return fmt.Errorf("failed to remove file %s: %w", file.Name(), err)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // StartAuthFlow initiates the OAuth authorization flow
 func (fd *FitbitDownloader) StartAuthFlow() error {

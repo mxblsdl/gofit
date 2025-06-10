@@ -8,16 +8,11 @@ templ Error(message string) {
     <h1>Error</h1>
     <p>{ message }</p>
     // button to remove client id and secret then reload
-    <form id="remove" action="/remove-credentials" method="post">
+    <form id="remove" hx-post="/remove-secrets" hx-target="body" hx-swap="outerHTML">
         <button type="submit">Remove Credentials</button>
     </form>
 </div>
 
-<script>
-    htmx.find("#remove").addEventListener("click", function (event) {
-        event.preventDefault();
-        console.log("Removing credentials...");
-    });
-</script>
+
 }
 }
