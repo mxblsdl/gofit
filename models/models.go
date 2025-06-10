@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -40,9 +41,10 @@ type TokenInfo struct {
 
 // FitbitDownloader manages downloading Fitbit data
 type FitbitDownloader struct {
-	Config    Config
-	TokenInfo TokenInfo
-	DataDir   string
+	Config          Config
+	TokenInfo       TokenInfo
+	DataDir         string
+	callbackRunning bool
 }
 
 type ProfileData struct {
@@ -146,10 +148,24 @@ func (fd *FitbitDownloader) StartAuthFlow() error {
 	params.Add("redirect_uri", fd.Config.RedirectURI)
 
 	fullAuthURL := fmt.Sprintf("%s?%s", authURL, params.Encode())
-	fmt.Println("Opening browser for authorization:", fullAuthURL)
+
+	// Validate the authorization URL by sending a test request
+	req, err := http.NewRequest("GET", fullAuthURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create authorization request: %v", err)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to validate authorization URL: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("invalid client_id or client_secret: %d", resp.StatusCode)
+	}
 
 	// Open the authorization URL in the browser
-	// err := os.Setenv("BROWSER", "chromium") // or "google-chrome", "chromium", etc.
 	cmd := exec.Command("chromium", fullAuthURL) // Use xdg-open for Linux, or change to "open" for macOS
 	fmt.Println("If no browser opens, please copy and paste the following URL into your browser:")
 	fmt.Println(fullAuthURL)
@@ -162,21 +178,24 @@ func (fd *FitbitDownloader) StartAuthFlow() error {
 	case authCode := <-authCodeChan:
 		return fd.getAccessToken(authCode)
 	case err := <-serverErrChan:
-		return err
+		return fmt.Errorf("server error: %v", err)
 	}
 }
 
 // startCallbackServer starts a local server to receive the OAuth callback
 func (fd *FitbitDownloader) startCallbackServer(authCodeChan chan<- string, errChan chan<- error) {
-	server := &http.Server{Addr: "localhost:8080"}
+	if fd.callbackRunning {
+		log.Println("Callback server is already running, skipping start.")
+		return
+	}
+	fd.callbackRunning = true
 
+	log.Println("Starting local server to receive authorization callback...")
+	server := &http.Server{Addr: "localhost:8081"}
+
+	mux := http.NewServeMux()
 	// ERROR handling the index page for the server
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-
+	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		queryParams := r.URL.Query()
 		code := queryParams.Get("code")
 
@@ -315,9 +334,6 @@ func (fd *FitbitDownloader) refreshAccessToken() error {
 		req.Header.Set("Authorization", "Basic "+authValue)
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		if err != nil {
-			return fmt.Errorf("failed to create refresh token request: %v", err)
-		}
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
@@ -327,7 +343,7 @@ func (fd *FitbitDownloader) refreshAccessToken() error {
 
 		if resp.StatusCode != 200 {
 			bodyBytes, _ := io.ReadAll(resp.Body)
-			fmt.Printf("Failed to refresh access token: %d %s\n", resp.StatusCode, string(bodyBytes))
+			log.Printf("Failed to refresh access token: %d %s\n", resp.StatusCode, string(bodyBytes))
 
 			// Remove the old token file
 			tokenFile := filepath.Join(fd.DataDir, "token_info.json")
@@ -417,9 +433,8 @@ func (fd *FitbitDownloader) DownloadActivities(activity string, days_back int) (
 	fmt.Printf("Reading %s data from %s to %s...\n", activity, startDate, endDate)
 
 	endpoint := fmt.Sprintf("https://api.fitbit.com/1/user/-/activities/%s/date/%s/%s.json", activity, startDate, endDate)
-	filename := fmt.Sprintf("%s_%s_to_%s.json", activity, startDate, endDate)
 
-	data, err := fd.getData(activity, endpoint, filename)
+	data, err := fd.getData(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download %s data: %v", activity, err)
 	}
@@ -427,7 +442,7 @@ func (fd *FitbitDownloader) DownloadActivities(activity string, days_back int) (
 	return data, nil
 }
 
-func (fd *FitbitDownloader) getData(activity, endpoint, filename string) (*ActivityData, error) {
+func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
 	err := fd.refreshAccessToken()
 	if err != nil {
 		return nil, err

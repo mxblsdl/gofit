@@ -18,12 +18,6 @@ import (
 	"github.com/gofit/templates"
 )
 
-// TODO simplify or generalize this, maybe rename?
-var Store = models.DataStore{
-	StepsData:   models.ChartData{},
-	ProfileData: models.ProfileData{},
-}
-
 // HTTP handlers
 func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 	chartType := r.URL.Query().Get("type")
@@ -31,7 +25,7 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 	var data models.ChartData
 	switch chartType {
 	case "steps":
-		data = Store.GetStepsData()
+		data = downloader.Store.GetStepsData()
 	default:
 		// data = Store.GetHeartRateData()
 	}
@@ -82,7 +76,7 @@ func generateLineItems(data []int) []opts.LineData {
 }
 
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	profileData := Store.ProfileData
+	profileData := downloader.Store.ProfileData
 
 	// Render the profile template with the profile data
 	component := templates.Profile(profileData)
@@ -119,40 +113,12 @@ func AuthSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	os.WriteFile(filePath, account_data, 0644)
 
 	// fmt.Printf("Received Fitbit ID: %s, Secret: %s\n", fitbitID, fitbitSecret)
-	// TODO put this logic into a function so it can be used in teh index endpoint as well
-	downloader := downloader.NewFitbitDownloader(account_info.ClientID, account_info.ClientSecret, "fitbit_data")
-
-	// fmt.Print(downloader)
-
-	// Check if we already have token information
-	err = downloader.LoadTokenInfo()
+	err = downloader.PopulateDataStore(account_info.ClientID, account_info.ClientSecret, "fitbit_data")
 	if err != nil {
-		// First time authentication (only needed once)
-		// This will open your browser for authorization
-		fmt.Println("No token information found. Starting authorization flow...")
-		err = downloader.StartAuthFlow()
-		if err != nil {
-			log.Fatal("Authorization failed:", err)
-		}
+		http.Error(w, "Failed to populate data store: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	profileData, err := downloader.DownloadProfile()
-	if err != nil {
-		log.Fatal("Failed to download profile:", err)
-	}
-	if profileData != nil {
-		Store.ProfileData = *profileData
-	}
-
-	DAYS_BACK := 5
-	stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
-	if err != nil {
-		log.Fatal("Failed to download steps data:", err)
-	}
-	if stepData != nil {
-		processedData := stepData.ProcessData()
-		Store.StepsData = processedData
-	}
+	fmt.Println("Data store populated successfully")
 
 	// Respond to the client
 	w.Header().Set("Content-Type", "text/html")
@@ -160,16 +126,47 @@ func AuthSubmitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	account_info := filepath.Join("fitbit_data", "account_info.json")
-	if _, err := os.Stat(account_info); os.IsNotExist(err) {
+	account_info_file := filepath.Join("fitbit_data", "account_info.json")
+	if _, err := os.Stat(account_info_file); os.IsNotExist(err) {
 		// If account_info does not exist, redirect to the auth page
+		log.Println("Account info not found, redirecting to auth page")
 		http.Redirect(w, r, "/auth", http.StatusFound)
 		return
+	} else {
+		// If account_info exists, read it
+		data, err := os.ReadFile(account_info_file)
+		if err != nil {
+			http.Error(w, "Failed to read account info: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var account_info models.Config
+		err = json.Unmarshal(data, &account_info)
+		if err != nil {
+			http.Error(w, "Failed to parse account info: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Println("Account info loaded successfully:", account_info)
+		err = downloader.PopulateDataStore(account_info.ClientID, account_info.ClientSecret, "fitbit_data")
+		if err != nil {
+			component := templates.Error("Failed to populate data store: " + err.Error())
+			templ.Handler(component).ServeHTTP(w, r)
+			return
+		}
+
 	}
 
 	// Render the index template
 	component := templates.Index()
 	templ.Handler(component).ServeHTTP(w, r)
+}
+
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Endpoint: %s, Method: %s", r.URL.Path, r.Method)
+		next.ServeHTTP(w, r) // Call the original handler
+	})
 }
 
 func Serve() {
@@ -178,15 +175,11 @@ func Serve() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Set up HTTP routes
-	http.HandleFunc("/", IndexHandler)
-
-	http.HandleFunc("/auth", AuthHandler)
-	http.HandleFunc("/auth-submit", AuthSubmitHandler)
-	// http.Handle("/", templ.Handler(templates.Index()))
-	http.HandleFunc("/profile", ProfileHandler)
-
-	http.HandleFunc("/line", LineChartHandler)
-	// http.HandleFunc("/bar", barChartHandler)
+	http.Handle("/", loggingMiddleware(http.HandlerFunc(IndexHandler)))
+	http.Handle("/auth", loggingMiddleware(http.HandlerFunc(AuthHandler)))
+	http.Handle("/auth-submit", loggingMiddleware(http.HandlerFunc(AuthSubmitHandler)))
+	http.Handle("/profile", loggingMiddleware(http.HandlerFunc(ProfileHandler)))
+	http.Handle("/line", loggingMiddleware(http.HandlerFunc(LineChartHandler)))
 
 	port := "8080"
 	log.Printf("Server starting on http://localhost:%s", port)
@@ -198,10 +191,8 @@ func Serve() {
 	}
 }
 
-// TODO: check for id and secret file
-// if not found, redirect to auth page
-// save the id and secret to a file
+// TODO: utilize other data from the downloader
+// TODO: some type of error when client secret and id dont work
+// TODO: change how charts look at little DateOfBirth
 
-// TODO: remove nav bar from the landing page
-
-// TODO: make sure endpoint point to correct templates, currently redirects to auth landing page
+// Set days back to be a variable??

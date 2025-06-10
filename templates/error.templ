@@ -1,0 +1,23 @@
+package templates
+
+
+
+templ Error(message string) {
+@Layout("Error") {
+<div class="error-container">
+    <h1>Error</h1>
+    <p>{ message }</p>
+    // button to remove client id and secret then reload
+    <form id="remove" action="/remove-credentials" method="post">
+        <button type="submit">Remove Credentials</button>
+    </form>
+</div>
+
+<script>
+    htmx.find("#remove").addEventListener("click", function (event) {
+        event.preventDefault();
+        console.log("Removing credentials...");
+    });
+</script>
+}
+}
