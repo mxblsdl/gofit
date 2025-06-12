@@ -16,11 +16,14 @@ import (
 	"time"
 )
 
+var AuthFlowInProgress bool
+
 // Config holds the application configuration
 type Config struct {
 	ClientID     string `json:"client_id" validate:"required"`
 	ClientSecret string `json:"client_secret" validate:"required"`
 	RedirectURI  string `json:"redirect_uri"`
+	RedirectPort string `json:"redirect_port"`
 }
 
 // TokenResponse represents the OAuth token response
@@ -110,28 +113,18 @@ func (s *ActivityData) ProcessData() ChartData {
 	return chart
 }
 
-// func (fd *FitbitDownloader) ClearAllData() error {
-// 	// Clear all data files in the data directory
-// 	files, err := os.ReadDir(fd.DataDir)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to read data directory: %w", err)
-// 	}
-
-// 	for _, file := range files {
-// 		if file.Name() == "token_info.json" {
-// 			continue
-// 		}
-// 		err := os.Remove(fd.DataDir + "/" + file.Name())
-// 		if err != nil {
-// 			return fmt.Errorf("failed to remove file %s: %w", file.Name(), err)
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 // StartAuthFlow initiates the OAuth authorization flow
 func (fd *FitbitDownloader) StartAuthFlow() error {
+	if AuthFlowInProgress {
+		fmt.Println("Authorization flow is already in progress. Skipping...")
+		return nil
+	}
+	AuthFlowInProgress = true // Set the flag
+
+	defer func() {
+		AuthFlowInProgress = false // Reset the flag after completion
+	}()
+
 	// Create a channel to receive the authorization code
 	authCodeChan := make(chan string)
 	serverErrChan := make(chan error)
@@ -191,11 +184,15 @@ func (fd *FitbitDownloader) startCallbackServer(authCodeChan chan<- string, errC
 	fd.callbackRunning = true
 
 	log.Println("Starting local server to receive authorization callback...")
-	server := &http.Server{Addr: "localhost:8081"}
+	// server := &http.Server{Addr: "localhost:8081"}
 
 	mux := http.NewServeMux()
+	server := &http.Server{
+		Addr:    "localhost:" + fd.Config.RedirectPort,
+		Handler: mux,
+	}
 	// ERROR handling the index page for the server
-	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		queryParams := r.URL.Query()
 		code := queryParams.Get("code")
 
@@ -213,12 +210,12 @@ func (fd *FitbitDownloader) startCallbackServer(authCodeChan chan<- string, errC
 		// Shutdown the server after handling the request
 		go func() {
 			time.Sleep(100 * time.Millisecond)
+			fd.callbackRunning = false
 			server.Close()
 		}()
 	})
 
-	fmt.Println("Starting local server to receive callback...")
-	fmt.Println("Waiting for authorization callback...")
+	log.Println("Waiting for authorization callback...")
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		errChan <- fmt.Errorf("HTTP server error: %v", err)
@@ -306,7 +303,7 @@ func (fd *FitbitDownloader) LoadTokenInfo() error {
 }
 
 // refreshAccessToken refreshes the access token if expired
-func (fd *FitbitDownloader) refreshAccessToken() error {
+func (fd *FitbitDownloader) RefreshAccessToken() error {
 	// Try to load token info if not available
 	if fd.TokenInfo.AccessToken == "" {
 		err := fd.LoadTokenInfo()
@@ -380,7 +377,7 @@ func (fd *FitbitDownloader) refreshAccessToken() error {
 
 // DownloadProfile downloads user profile data
 func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
-	err := fd.refreshAccessToken()
+	err := fd.RefreshAccessToken()
 	if err != nil {
 		return nil, err
 	}
@@ -443,10 +440,10 @@ func (fd *FitbitDownloader) DownloadActivities(activity string, days_back int) (
 }
 
 func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
-	err := fd.refreshAccessToken()
-	if err != nil {
-		return nil, err
-	}
+	// err := fd.RefreshAccessToken()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
@@ -476,18 +473,5 @@ func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
 	if err := json.Unmarshal(bodyBytes, &data); err != nil {
 		return nil, fmt.Errorf("failed to parse steps data JSON for %s: %v", endpoint, err)
 	}
-
-	// TODO remove once not needed
-	// formattedJSON, err := json.MarshalIndent(data, "", "  ")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to format JSON for %s: %v", endpoint, err)
-	// }
-
-	// filePath := filepath.Join(fd.DataDir, filename)
-	// err = os.WriteFile(filePath, formattedJSON, 0644)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to save %s data: %v", endpoint, err)
-	// }
-
 	return &data, nil
 }

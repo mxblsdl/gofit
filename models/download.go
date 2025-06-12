@@ -1,21 +1,19 @@
-package downloader
+package models
 
 import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/gofit/models"
 )
 
 // TODO simplify or generalize this, maybe rename?
-var Store = models.DataStore{
-	StepsData:   models.ChartData{},
-	ProfileData: models.ProfileData{},
+var Store = DataStore{
+	StepsData:   ChartData{},
+	ProfileData: ProfileData{},
 }
 
 // NewFitbitDownloader creates a new downloader instance
-func NewFitbitDownloader(clientID, clientSecret, dataDir string) *models.FitbitDownloader {
+func NewFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownloader {
 	// Create data directory if it doesn't exist
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
 		err := os.Mkdir(dataDir, 0755)
@@ -24,11 +22,12 @@ func NewFitbitDownloader(clientID, clientSecret, dataDir string) *models.FitbitD
 		}
 	}
 
-	return &models.FitbitDownloader{
-		Config: models.Config{
+	return &FitbitDownloader{
+		Config: Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			RedirectURI:  "http://localhost:8080",
+			RedirectPort: "8080",
 		},
 		DataDir: dataDir,
 	}
@@ -46,6 +45,14 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 		err = downloader.StartAuthFlow()
 		if err != nil {
 			fmt.Println("Authorization failed:", err)
+			return err
+		}
+	} else {
+		// Refresh the access token if it exists
+		fmt.Println("Refreshing access token...")
+		err = downloader.RefreshAccessToken()
+		if err != nil {
+			fmt.Println("Failed to refresh access token:", err)
 			return err
 		}
 	}
