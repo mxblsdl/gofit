@@ -41,7 +41,7 @@ func Index() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Fitbit Data</h1><p>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</p><div class=\"chart-links\"><a href=\"/line?type=steps\" class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p></a> <a href=\"/line?type=heart\" class=\"card\"><h2>Heart Rate Chart</h2><p>Monitor your heart rate patterns</p></a></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Fitbit Data</h1><p>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</p><div class=\"chart-links\"><a href=\"/line?type=steps\" class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p></a> <a href=\"/line?type=calories\" class=\"card\"><h2>Calorie Chart</h2><p>View daily calorie expenditure</p></a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

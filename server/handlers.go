@@ -23,11 +23,14 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 	var data models.ChartData
 	switch chartType {
 	case "steps":
-		data = models.Store.GetStepsData()
+		data = models.Store.StepsData
+	case "calories":
+		data = models.Store.CaloriesData
 	default:
 		// data = Store.GetHeartRateData()
 	}
 	line := generateLineChart(data)
+	log.Println("Generating line chart for type:", chartType)
 
 	var buf bytes.Buffer
 	err := line.Render(&buf)
@@ -40,14 +43,25 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 	templ.Handler(component).ServeHTTP(w, r)
 }
 
+// TODO move to separate file
 func generateLineChart(data models.ChartData) *charts.Line {
 	line := charts.NewLine()
+
 	line.SetGlobalOptions(
 		charts.WithInitializationOpts(opts.Initialization{Theme: "macarons"}),
 		charts.WithTitleOpts(opts.Title{
 			Title:    data.Title,
 			Subtitle: data.Subtitle,
 		}),
+		charts.WithTooltipOpts(opts.Tooltip{
+			Show:            opts.Bool(true),
+			Trigger:         "item",
+			BackgroundColor: "#f5f5f5",
+			BorderColor:     "#ccc",
+			AxisPointer: &opts.AxisPointer{
+				Type: "cross",
+			}}),
+		// charts.WithXAxisOpts(opts.XAxis{Data: data.XAxis}),
 	)
 
 	// X-axis data

@@ -9,8 +9,9 @@ import (
 
 // TODO simplify or generalize this, maybe rename?
 var Store = DataStore{
-	StepsData:   ChartData{},
-	ProfileData: ProfileData{},
+	StepsData:    ChartData{},
+	CaloriesData: ChartData{},
+	ProfileData:  ProfileData{},
 }
 
 const DAYS_BACK int = 5
@@ -75,6 +76,15 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 	if stepData != nil {
 		processedData := stepData.ProcessData(strconv.Itoa(DAYS_BACK))
 		Store.StepsData = processedData
+	}
+
+	caloriesData, err := downloader.DownloadActivities("calories", DAYS_BACK)
+	if err != nil {
+		log.Fatal("Failed to download calories data:", err)
+	}
+	if caloriesData != nil {
+		processedData := caloriesData.ProcessData(strconv.Itoa(DAYS_BACK))
+		Store.CaloriesData = processedData
 	}
 	return nil
 

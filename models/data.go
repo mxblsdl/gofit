@@ -1,7 +1,5 @@
 package models
 
-import "sync"
-
 type ChartData struct {
 	Title    string
 	Subtitle string
@@ -10,21 +8,7 @@ type ChartData struct {
 }
 
 type DataStore struct {
-	StepsData   ChartData
-	ProfileData ProfileData
-	mu          sync.RWMutex
-}
-
-// UpdateStepsData safely updates steps chart data
-func (ds *DataStore) UpdateStepsData(data ChartData) {
-	ds.mu.Lock()
-	defer ds.mu.Unlock()
-	ds.StepsData = data
-}
-
-// GetStepsData safely retrieves steps chart data
-func (ds *DataStore) GetStepsData() ChartData {
-	ds.mu.RLock()
-	defer ds.mu.RUnlock()
-	return ds.StepsData
+	StepsData    ChartData
+	CaloriesData ChartData
+	ProfileData  ProfileData
 }

@@ -75,7 +75,7 @@ type UserProfile struct {
 
 type ActivityData struct {
 	ActivityType string
-	Activities   []ActivityEntry `json:"activities-steps"`
+	Activities   []ActivityEntry
 }
 
 type ActivityEntry struct {
@@ -83,37 +83,29 @@ type ActivityEntry struct {
 	Value    string `json:"value"`
 }
 
-// func (s *ActivityData) GetValues() []ActivityEntry {
-// 	entries := make([]ActivityEntry, len(s.Activities))
-// 	for i, activity := range s.Activities {
-// 		entries[i] = ActivityEntry{
-// 			DateTime: activity.DateTime,
-// 			Value:    activity.Value,
-// 		}
-// 	}
-// 	return entries
-// }
+// UnmarshalJSON implements custom unmarshalling for ActivityData to handle Fitbit's activity data structure.
+func (a *ActivityData) UnmarshalJSON(data []byte) error {
+	// Custom unmarshal to handle the structure of Fitbit activity data
+	var temp map[string][]ActivityEntry
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	for _, value := range temp {
+		a.Activities = value
+		break
+	}
+
+	return nil
+}
 
 func (s *ActivityData) ProcessData(days_back string) ChartData {
 	// Convert StepsData to ChartData for visualization
-	// TODO figure out how I can generalize this method to handle different types of data
-	// TODO add ActivityType into my ChartData struct
-	var title string
-	var subtitle string
-
-	switch s.ActivityType {
-	case "steps":
-		title = "Steps Over Time"
-		subtitle = "Daily step count for the last 30 days"
-	default:
-		title = "Activity Over Time"
-	}
-
 	tag := language.Make(s.ActivityType)
 	series := cases.Title(tag).String(s.ActivityType)
 	chart := ChartData{
-		Title:    title,
-		Subtitle: subtitle,
+		Title:    fmt.Sprintf("%s Over Time", cases.Title(language.English).String(s.ActivityType)),
+		Subtitle: fmt.Sprintf("Daily %s count for the last %s days", s.ActivityType, days_back),
 		XAxis:    make([]string, len(s.Activities)),
 		Series:   map[string][]int{series: make([]int, len(s.Activities))},
 	}
@@ -483,7 +475,6 @@ func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response for %s: %v", endpoint, err)
 	}
-
 	var data ActivityData
 
 	if err := json.Unmarshal(bodyBytes, &data); err != nil {
