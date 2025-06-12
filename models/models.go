@@ -14,6 +14,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var AuthFlowInProgress bool
@@ -71,7 +74,8 @@ type UserProfile struct {
 }
 
 type ActivityData struct {
-	Activities []ActivityEntry `json:"activities-steps"`
+	ActivityType string
+	Activities   []ActivityEntry `json:"activities-steps"`
 }
 
 type ActivityEntry struct {
@@ -79,35 +83,49 @@ type ActivityEntry struct {
 	Value    string `json:"value"`
 }
 
-func (s *ActivityData) GetValues() []ActivityEntry {
-	entries := make([]ActivityEntry, len(s.Activities))
-	for i, activity := range s.Activities {
-		entries[i] = ActivityEntry{
-			DateTime: activity.DateTime,
-			Value:    activity.Value,
-		}
-	}
-	return entries
-}
+// func (s *ActivityData) GetValues() []ActivityEntry {
+// 	entries := make([]ActivityEntry, len(s.Activities))
+// 	for i, activity := range s.Activities {
+// 		entries[i] = ActivityEntry{
+// 			DateTime: activity.DateTime,
+// 			Value:    activity.Value,
+// 		}
+// 	}
+// 	return entries
+// }
 
-func (s *ActivityData) ProcessData() ChartData {
+func (s *ActivityData) ProcessData(days_back string) ChartData {
 	// Convert StepsData to ChartData for visualization
 	// TODO figure out how I can generalize this method to handle different types of data
+	// TODO add ActivityType into my ChartData struct
+	var title string
+	var subtitle string
+
+	switch s.ActivityType {
+	case "steps":
+		title = "Steps Over Time"
+		subtitle = "Daily step count for the last 30 days"
+	default:
+		title = "Activity Over Time"
+	}
+
+	tag := language.Make(s.ActivityType)
+	series := cases.Title(tag).String(s.ActivityType)
 	chart := ChartData{
-		Title:    "Steps Over Time",
-		Subtitle: "Daily step count for the last 30 days",
+		Title:    title,
+		Subtitle: subtitle,
 		XAxis:    make([]string, len(s.Activities)),
-		Series:   map[string][]int{"Steps": make([]int, len(s.Activities))},
+		Series:   map[string][]int{series: make([]int, len(s.Activities))},
 	}
 
 	for i, entry := range s.Activities {
 		val, err := strconv.Atoi(entry.Value)
 		if err != nil {
-			val = 0 // or handle error as needed
+			val = 0
 		}
 
 		chart.XAxis[i] = entry.DateTime
-		chart.Series["Steps"][i] = val
+		chart.Series[series][i] = val
 	}
 
 	return chart
@@ -184,7 +202,6 @@ func (fd *FitbitDownloader) startCallbackServer(authCodeChan chan<- string, errC
 	fd.callbackRunning = true
 
 	log.Println("Starting local server to receive authorization callback...")
-	// server := &http.Server{Addr: "localhost:8081"}
 
 	mux := http.NewServeMux()
 	server := &http.Server{
@@ -410,7 +427,7 @@ func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
 		return nil, fmt.Errorf("failed to read profile response: %v", err)
 	}
 
-	// Indent the JSON for better readability
+	// Unmarshal the JSON response into ProfileData struct
 	var profileData ProfileData
 	err = json.Unmarshal(bodyBytes, &profileData)
 	if err != nil {
@@ -435,15 +452,14 @@ func (fd *FitbitDownloader) DownloadActivities(activity string, days_back int) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to download %s data: %v", activity, err)
 	}
+
+	// Populate Activity Type
+	data.ActivityType = activity
 	fmt.Printf("%s data downloaded successfully!\n", activity)
 	return data, nil
 }
 
 func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
-	// err := fd.RefreshAccessToken()
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {

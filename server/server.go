@@ -34,6 +34,7 @@ func Serve() {
 	}
 }
 
-// TODO General cleanup
-// TODO use logging instead of fmt.Println
+// Add another activity type
+// Play around with chart options
 // Look into conditional rendering of buttons in nav bar
+// Convert profile height and weight to US customary units

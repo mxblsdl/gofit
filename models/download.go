@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
 // TODO simplify or generalize this, maybe rename?
@@ -11,6 +12,8 @@ var Store = DataStore{
 	StepsData:   ChartData{},
 	ProfileData: ProfileData{},
 }
+
+const DAYS_BACK int = 5
 
 // NewFitbitDownloader creates a new downloader instance
 func NewFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownloader {
@@ -65,13 +68,12 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 		Store.ProfileData = *profileData
 	}
 
-	DAYS_BACK := 5
 	stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
 	if err != nil {
 		log.Fatal("Failed to download steps data:", err)
 	}
 	if stepData != nil {
-		processedData := stepData.ProcessData()
+		processedData := stepData.ProcessData(strconv.Itoa(DAYS_BACK))
 		Store.StepsData = processedData
 	}
 	return nil

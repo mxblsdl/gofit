@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -41,7 +40,6 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 	templ.Handler(component).ServeHTTP(w, r)
 }
 
-// generateLineChart creates a sample line chart
 func generateLineChart(data models.ChartData) *charts.Line {
 	line := charts.NewLine()
 	line.SetGlobalOptions(
@@ -112,13 +110,12 @@ func AuthSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	account_data, err := json.MarshalIndent(account_info, "", "  ")
 	os.WriteFile(filePath, account_data, 0644)
 
-	// fmt.Printf("Received Fitbit ID: %s, Secret: %s\n", fitbitID, fitbitSecret)
 	err = models.PopulateDataStore(account_info.ClientID, account_info.ClientSecret, "fitbit_data")
 	if err != nil {
 		http.Error(w, "Failed to populate data store: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Data store populated successfully")
+	log.Println("Data store populated successfully")
 
 	// Respond to the client
 	w.Header().Set("Content-Type", "text/html")
@@ -153,7 +150,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Account info loaded successfully:", account_info)
+	log.Println("Account info loaded successfully:", account_info)
 
 	err = models.PopulateDataStore(account_info.ClientID, account_info.ClientSecret, "fitbit_data")
 	if err != nil {
@@ -168,8 +165,6 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func removeSecretsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
-
 	account_info_file := filepath.Join("fitbit_data", "account_info.json")
 	if _, err := os.Stat(account_info_file); os.IsNotExist(err) {
 		http.Error(w, "Account info not found", http.StatusNotFound)
