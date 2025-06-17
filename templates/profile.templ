@@ -1,19 +1,35 @@
 package templates
 
-import "github.com/gofit/models"
+import (
+	"fmt"
+	"github.com/gofit/models"
+	"math"
+)
 
-// TODO load the profile data into this page
-templ Profile(data models.ProfileData) {
-@Layout("Profile") {
-<h1>User Profile</h1>
-<div class="profile-container">
-    <div class="profile-info">
-        <h2>Personal Information</h2>
-        <p>Name: <span id="user-name">{data.User.FullName}</span></p>
-        <p>Age: <span id="user-age">{data.User.Age}</span></p>
-        <p>Height: <span id="user-height">{data.User.Height}.</span></p>
-        <p>Weight: <span id="user-weight">{data.User.Weight}</span></p>
-    </div>
-</div>
+func cmToFeet(v float64) string {
+	result := v * 0.0328
+	feet := math.Round(result)
+	inches := (result - feet) * 12
+	return fmt.Sprintf("%g' %g''", feet, math.Round(inches))
 }
+
+func kgToLbs(v float64) string {
+	result := v * 2.2046
+
+	return fmt.Sprintf("%.1f", result)
+}
+
+templ Profile(data models.ProfileData) {
+	@Layout("Profile") {
+		<h1>User Profile</h1>
+		<div class="profile-container">
+			<div class="profile-info">
+				<h2>Personal Information</h2>
+				<p>Name: <span id="user-name">{ data.User.FullName }</span></p>
+				<p>Age: <span id="user-age">{ data.User.Age }</span></p>
+				<p>Height: <span id="user-height">{ data.User.Height } cm / { cmToFeet(data.User.Height) }</span></p>
+				<p>Weight: <span id="user-weight">{ data.User.Weight } kg / { kgToLbs(data.User.Weight) } lbs</span></p>
+			</div>
+		</div>
+	}
 }
