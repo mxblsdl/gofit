@@ -8,7 +8,8 @@ type ChartData struct {
 }
 
 type DataStore struct {
-	StepsData    ChartData
-	CaloriesData ChartData
-	ProfileData  ProfileData
+	StepsData     ChartData
+	CaloriesData  ChartData
+	ElevationData ChartData
+	ProfileData   ProfileData
 }

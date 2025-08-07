@@ -1,24 +1,21 @@
 package templates
 
-import (
-"html/template"
-"io"
-"context"
-)
+import "html/template"
 
-templ LineChart(chartHTML template.HTML, Title string ) {
-
-@Layout(Title) {
-<div class="chart-container">
-    @RawHTML(string(chartHTML))
-</div>
-}
+templ LineChart(chartHTML template.HTML, Title string) {
 }
 
-// Custom component to render raw HTML
-func RawHTML(html string) templ.Component {
-return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-_, err := io.WriteString(w, html)
-return err
-})
-}
+// @Layout(Title) {
+// <div class="chart-container">
+//     @RawHTML(string(chartHTML))
+// </div>
+// }
+// }
+
+// // Custom component to render raw HTML
+// func RawHTML(html string) templ.Component {
+// return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+// _, err := io.WriteString(w, html)
+// return err
+// })
+// }

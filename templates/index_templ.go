@@ -8,7 +8,9 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Index() templ.Component {
+import "html/template"
+
+func Index(stepsChart template.HTML) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -41,7 +43,15 @@ func Index() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Fitbit Data</h1><p>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</p><div class=\"chart-links\"><a href=\"/line?type=steps\" class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p></a> <a href=\"/line?type=calories\" class=\"card\"><h2>Calorie Chart</h2><p>View daily calorie expenditure</p></a></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Fitbit Data</h1><div>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</div><div class=\"dashboard-charts\"><div class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templ.Raw(stepsChart).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -55,4 +65,28 @@ func Index() templ.Component {
 	})
 }
 
+// Custom component to render raw HTML
+// func RawHTML(html string) templ.Component {
+// 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+// 		_, err := io.WriteString(w, html)
+// 		return err
+// 	})
+// }
+
+// <div class="chart-links">
+//     <a href="/line?type=steps" class="card">
+//         <h2>Steps Chart</h2>
+//         <p>View your daily step count</p>
+//     </a>
+//     <a href="/line?type=calories" class="card">
+//         <h2>Calorie Chart</h2>
+//         <p>View daily calorie expenditure</p>
+//     </a>
+
+//     <a href="/line?type=elevation" class="card">
+//         <h2>Elevation Chart</h2>
+//         <p>View daily elevation change</p>
+//     </a>
+
+// </div>
 var _ = templruntime.GeneratedTemplate

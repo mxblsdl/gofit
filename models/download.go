@@ -7,14 +7,14 @@ import (
 	"strconv"
 )
 
-// TODO simplify or generalize this, maybe rename?
 var Store = DataStore{
-	StepsData:    ChartData{},
-	CaloriesData: ChartData{},
-	ProfileData:  ProfileData{},
+	StepsData:     ChartData{},
+	CaloriesData:  ChartData{},
+	ProfileData:   ProfileData{},
+	ElevationData: ChartData{},
 }
 
-const DAYS_BACK int = 5
+const DAYS_BACK int = 14
 
 // NewFitbitDownloader creates a new downloader instance
 func NewFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownloader {
@@ -86,6 +86,16 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 		processedData := caloriesData.ProcessData(strconv.Itoa(DAYS_BACK))
 		Store.CaloriesData = processedData
 	}
+
+	elevationData, err := downloader.DownloadActivities("elevation", DAYS_BACK)
+	if err != nil {
+		log.Fatal("Failed to download elevation data:", err)
+	}
+	if elevationData != nil {
+		processedData := elevationData.ProcessData(strconv.Itoa(DAYS_BACK))
+		Store.ElevationData = processedData
+	}
+
 	return nil
 
 }

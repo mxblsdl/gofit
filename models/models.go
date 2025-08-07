@@ -115,8 +115,13 @@ func (s *ActivityData) ProcessData(days_back string) ChartData {
 		if err != nil {
 			val = 0
 		}
+		t, err := time.Parse("01-02", entry.DateTime)
+		if err != nil {
+			chart.XAxis[i] = entry.DateTime // Fallback to raw date if parsing fails
+		} else {
+			chart.XAxis[i] = t.Weekday().String()[:3] + " " + t.Format("01-02")
+		}
 
-		chart.XAxis[i] = entry.DateTime
 		chart.Series[series][i] = val
 	}
 

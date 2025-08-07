@@ -22,10 +22,12 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 		data = models.Store.StepsData
 	case "calories":
 		data = models.Store.CaloriesData
+	case "elevation":
+		data = models.Store.ElevationData
 	default:
 		// data = Store.GetHeartRateData()
 	}
-	line := generateLineChart(data)
+	line := generateLineChart(data, chartType)
 	log.Println("Generating line chart for type:", chartType)
 
 	var buf bytes.Buffer
@@ -40,7 +42,7 @@ func LineChartHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // TODO move to separate file
-func generateLineChart(data models.ChartData) *charts.Line {
+func generateLineChart(data models.ChartData, chartType string) *charts.Line {
 	line := charts.NewLine()
 
 	line.SetGlobalOptions(
@@ -48,6 +50,11 @@ func generateLineChart(data models.ChartData) *charts.Line {
 		charts.WithTitleOpts(opts.Title{
 			Title:    data.Title,
 			Subtitle: data.Subtitle,
+		}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{
+				Rotate: 45,
+			},
 		}),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Show:            opts.Bool(true),
@@ -57,11 +64,26 @@ func generateLineChart(data models.ChartData) *charts.Line {
 			AxisPointer: &opts.AxisPointer{
 				Type: "cross",
 			}}),
-		// charts.WithXAxisOpts(opts.XAxis{Data: data.XAxis}),
 	)
 
 	// X-axis data
 	line.SetXAxis(data.XAxis)
+
+	if chartType == "elevation" {
+		line.SetGlobalOptions(
+			// charts.WithLabelOpts(opts.Label{
+			// 	FontSize: 20,
+			// }),
+			charts.WithYAxisOpts(opts.YAxis{
+				Name:         "Elevation (m)",
+				NameLocation: "middle",
+				NameGap:      50,
+				AxisLabel: &opts.AxisLabel{
+					FontSize: 18,
+				},
+			}),
+		)
+	}
 
 	// Add each series from the data
 	for name, values := range data.Series {

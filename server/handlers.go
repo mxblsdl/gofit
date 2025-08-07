@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -62,9 +64,7 @@ func AuthSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Data store populated successfully")
 
-	// Respond to the client
-	w.Header().Set("Content-Type", "text/html")
-	templ.Handler(templates.Index()).ServeHTTP(w, r)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,8 +103,16 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		templ.Handler(component).ServeHTTP(w, r)
 		return
 	}
+	stepsChart := generateLineChart(models.Store.StepsData, "steps")
 
-	component := templates.Index()
+	var buf bytes.Buffer
+	err = stepsChart.Render(&buf)
+	if err != nil {
+		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
+		return
+	}
+
+	component := templates.Index(template.HTML(buf.String()))
 	templ.Handler(component).ServeHTTP(w, r)
 
 }
