@@ -112,7 +112,15 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	component := templates.Index(template.HTML(buf.String()))
+	eleChart := generateLineChart(models.Store.ElevationData, "elevation")
+	var ele bytes.Buffer
+	err = eleChart.Render(&ele)
+	if err != nil {
+		http.Error(w, "Failed to render elevation chart", http.StatusInternalServerError)
+		return
+	}
+
+	component := templates.Index(template.HTML(buf.String()), template.HTML(ele.String()))
 	templ.Handler(component).ServeHTTP(w, r)
 
 }

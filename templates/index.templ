@@ -2,41 +2,19 @@ package templates
 
 import "html/template"
 
-templ Index(stepsChart template.HTML) {
+templ Index(stepsChart, elevationChart template.HTML) {
 	@Layout("Home") {
-		<h1>Fitbit Data</h1>
-		<div>Welcome to your Fitbit data dashboard. Click on the links below to view different data visualizations:</div>
 		<div class="dashboard-charts">
 			<div class="card">
 				<h2>Steps Chart</h2>
 				<p>View your daily step count</p>
 				@templ.Raw(stepsChart)
 			</div>
+			<div class="card">
+				<h2>Elevation Chart</h2>
+				<p>View your elevation data</p>
+				@templ.Raw(elevationChart)
+			</div>
 		</div>
 	}
 }
-
-// Custom component to render raw HTML
-// func RawHTML(html string) templ.Component {
-// 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-// 		_, err := io.WriteString(w, html)
-// 		return err
-// 	})
-// }
-
-// <div class="chart-links">
-//     <a href="/line?type=steps" class="card">
-//         <h2>Steps Chart</h2>
-//         <p>View your daily step count</p>
-//     </a>
-//     <a href="/line?type=calories" class="card">
-//         <h2>Calorie Chart</h2>
-//         <p>View daily calorie expenditure</p>
-//     </a>
-
-//     <a href="/line?type=elevation" class="card">
-//         <h2>Elevation Chart</h2>
-//         <p>View daily elevation change</p>
-//     </a>
-
-// </div>

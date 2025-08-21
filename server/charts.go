@@ -71,9 +71,6 @@ func generateLineChart(data models.ChartData, chartType string) *charts.Line {
 
 	if chartType == "elevation" {
 		line.SetGlobalOptions(
-			// charts.WithLabelOpts(opts.Label{
-			// 	FontSize: 20,
-			// }),
 			charts.WithYAxisOpts(opts.YAxis{
 				Name:         "Elevation (m)",
 				NameLocation: "middle",

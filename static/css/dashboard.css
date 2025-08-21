@@ -1,9 +1,9 @@
 .dashboard-charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  padding: 2rem;
-  max-width: 1600px;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem; /* Add spacing between grid items */
+  padding: 1rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
