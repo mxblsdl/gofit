@@ -120,7 +120,15 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	component := templates.Index(template.HTML(buf.String()), template.HTML(ele.String()))
+	calChart := generateLineChart(models.Store.CaloriesData, "calories")
+	var cal bytes.Buffer
+	err = calChart.Render(&cal)
+	if err != nil {
+		http.Error(w, "Failed to render calories chart", http.StatusInternalServerError)
+		return
+	}
+
+	component := templates.Index(template.HTML(buf.String()), template.HTML(ele.String()), template.HTML(cal.String()))
 	templ.Handler(component).ServeHTTP(w, r)
 
 }

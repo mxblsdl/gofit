@@ -21,7 +21,6 @@ func Serve() {
 	http.Handle("/auth", loggingMiddleware(http.HandlerFunc(AuthHandler)))
 	http.Handle("/auth-submit", loggingMiddleware(http.HandlerFunc(AuthSubmitHandler)))
 	http.Handle("/profile", loggingMiddleware(http.HandlerFunc(ProfileHandler)))
-	http.Handle("/line", loggingMiddleware(http.HandlerFunc(LineChartHandler)))
 	http.Handle("/remove-secrets", loggingMiddleware(http.HandlerFunc(removeSecretsHandler)))
 
 	port := "8081"

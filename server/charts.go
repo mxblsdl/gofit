@@ -1,45 +1,12 @@
 package server
 
 import (
-	"bytes"
-	"html/template"
-	"log"
-	"net/http"
-
-	"github.com/a-h/templ"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/gofit/models"
-	"github.com/gofit/templates"
+
 )
 
-func LineChartHandler(w http.ResponseWriter, r *http.Request) {
-	chartType := r.URL.Query().Get("type")
-
-	var data models.ChartData
-	switch chartType {
-	case "steps":
-		data = models.Store.StepsData
-	case "calories":
-		data = models.Store.CaloriesData
-	case "elevation":
-		data = models.Store.ElevationData
-	default:
-		// data = Store.GetHeartRateData()
-	}
-	line := generateLineChart(data, chartType)
-	log.Println("Generating line chart for type:", chartType)
-
-	var buf bytes.Buffer
-	err := line.Render(&buf)
-	if err != nil {
-		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
-		return
-	}
-
-	component := templates.LineChart(template.HTML(buf.String()), data.Title)
-	templ.Handler(component).ServeHTTP(w, r)
-}
 
 // TODO move to separate file
 func generateLineChart(data models.ChartData, chartType string) *charts.Line {
