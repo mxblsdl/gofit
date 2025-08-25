@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 var Store = DataStore{
@@ -69,33 +70,64 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 		Store.ProfileData = *profileData
 	}
 
-	stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
-	if err != nil {
-		log.Fatal("Failed to download steps data:", err)
-	}
-	if stepData != nil {
-		processedData := stepData.ProcessData(strconv.Itoa(DAYS_BACK))
-		Store.StepsData = processedData
-	}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-	caloriesData, err := downloader.DownloadActivities("calories", DAYS_BACK)
-	if err != nil {
-		log.Fatal("Failed to download calories data:", err)
-	}
-	if caloriesData != nil {
-		processedData := caloriesData.ProcessData(strconv.Itoa(DAYS_BACK))
-		Store.CaloriesData = processedData
-	}
+	errChan := make(chan error, 3) // Buffer size of 3 to hold potential errors from goroutines
 
-	elevationData, err := downloader.DownloadActivities("elevation", DAYS_BACK)
-	if err != nil {
-		log.Fatal("Failed to download elevation data:", err)
-	}
-	if elevationData != nil {
-		processedData := elevationData.ProcessData(strconv.Itoa(DAYS_BACK))
-		Store.ElevationData = processedData
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
+		if err != nil {
+			errChan <- fmt.Errorf("Failed to download steps data: %w", err)
+			return
+		}
+		if stepData != nil {
+			processedData := stepData.ProcessData(strconv.Itoa(DAYS_BACK))
+			mu.Lock()
+			Store.StepsData = processedData
+			mu.Unlock()
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		caloriesData, err := downloader.DownloadActivities("calories", DAYS_BACK)
+		if err != nil {
+			errChan <- fmt.Errorf("Failed to download calories data: %w", err)
+			return
+		}
+		if caloriesData != nil {
+			processedData := caloriesData.ProcessData(strconv.Itoa(DAYS_BACK))
+			mu.Lock()
+			Store.CaloriesData = processedData
+			mu.Unlock()
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		elevationData, err := downloader.DownloadActivities("elevation", DAYS_BACK)
+		if err != nil {
+			errChan <- fmt.Errorf("Failed to download elevation data: %w", err)
+			return
+		}
+		if elevationData != nil {
+			processedData := elevationData.ProcessData(strconv.Itoa(DAYS_BACK))
+			mu.Lock()
+			Store.ElevationData = processedData
+			mu.Unlock()
+		}
+	}()
+
+	wg.Wait()
+	close(errChan)
+
+	// Check for errors from goroutines
+	for err := range errChan {
+		log.Println(err)
 	}
 
 	return nil
-
 }
