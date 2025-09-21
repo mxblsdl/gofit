@@ -105,8 +105,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	stepsChart := generateLineChart(models.Store.StepsData, "steps")
 
-	var buf bytes.Buffer
-	err = stepsChart.Render(&buf)
+	var step bytes.Buffer
+	err = stepsChart.Render(&step)
 	if err != nil {
 		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
 		return
@@ -128,7 +128,15 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	component := templates.Index(template.HTML(buf.String()), template.HTML(ele.String()), template.HTML(cal.String()))
+	heartChart := generateHeartRateChart(models.Store.HeartRateData)
+	var heart bytes.Buffer
+	err = heartChart.Render(&heart)
+	if err != nil {
+		http.Error(w, "Failed to render heart rate chart", http.StatusInternalServerError)
+		return
+	}
+
+	component := templates.Index(template.HTML(step.String()), template.HTML(ele.String()), template.HTML(cal.String()), template.HTML(heart.String()))
 	templ.Handler(component).ServeHTTP(w, r)
 
 }

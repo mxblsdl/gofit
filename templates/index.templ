@@ -2,24 +2,29 @@ package templates
 
 import "html/template"
 
-templ Index(stepsChart, elevationChart, calorieChart template.HTML) {
-@Layout("Home") {
-<div class="dashboard-charts">
-	<div class="card">
-		<h2>Steps Chart</h2>
-		<p>View your daily step count</p>
-		@templ.Raw(stepsChart)
-	</div>
-	<div class="card">
-		<h2>Elevation Chart</h2>
-		<p>View your elevation data</p>
-		@templ.Raw(elevationChart)
-	</div>
-	<div class="card">
-		<h2>Calories Chart</h2>
-		<p>View your calorie data</p>
-		@templ.Raw(calorieChart)
-	</div>
-</div>
-}
+templ Index(stepsChart, elevationChart, calorieChart, heartRateChart template.HTML) {
+	@Layout("Home") {
+		<div class="dashboard-charts">
+			<div class="card">
+				<h2>Steps Chart</h2>
+				<p>View your daily step count</p>
+				@templ.Raw(stepsChart)
+			</div>
+			<div class="card">
+				<h2>Elevation Chart</h2>
+				<p>View your elevation data</p>
+				@templ.Raw(elevationChart)
+			</div>
+			<div class="card">
+				<h2>Calories Chart</h2>
+				<p>View your calorie data</p>
+				@templ.Raw(calorieChart)
+			</div>
+			<div class="card">
+				<h2>Heart Rate Chart</h2>
+				// <p>View your heart rate data</p>
+				@templ.Raw(heartRateChart)
+			</div>
+		</div>
+	}
 }
