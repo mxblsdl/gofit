@@ -83,6 +83,29 @@ type ActivityEntry struct {
 	Value    string `json:"value"`
 }
 
+type ActivitiesHeartList struct {
+	ActivitiesHeart []struct {
+		DateTime string `json:"dateTime"`
+		Value    struct {
+			CustomHeartRateZones []struct {
+				CaloriesOut float64 `json:"caloriesOut"`
+				Max         int     `json:"max"`
+				Min         int     `json:"min"`
+				Minutes     int     `json:"minutes"`
+				Name        string  `json:"name"`
+			} `json:"customHeartRateZones"`
+			HeartRateZones []struct {
+				CaloriesOut float64 `json:"caloriesOut"`
+				Max         int     `json:"max"`
+				Min         int     `json:"min"`
+				Minutes     int     `json:"minutes"`
+				Name        string  `json:"name"`
+			} `json:"heartRateZones"`
+			RestingHeartRate int `json:"restingHeartRate"`
+		} `json:"value"`
+	} `json:"activities-heart"`
+}
+
 // UnmarshalJSON implements custom unmarshalling for ActivityData to handle Fitbit's activity data structure.
 func (a *ActivityData) UnmarshalJSON(data []byte) error {
 	// Custom unmarshal to handle the structure of Fitbit activity data
@@ -125,6 +148,39 @@ func (s *ActivityData) ProcessData(days_back string) ChartData {
 		chart.Series[series][i] = val
 	}
 
+	return chart
+}
+
+func (s *ActivitiesHeartList) ProcessData(days_back string) HeartChartData {
+	chart := HeartChartData{
+		Title:  "Heart Rate Over Time",
+		XAxis:  make([]string, len(s.ActivitiesHeart)),
+		Series: make(map[string][]HeartRateEntry),
+	}
+
+	chart.Series["Heart Rate"] = make([]HeartRateEntry, len(s.ActivitiesHeart))
+
+	for i, entry := range s.ActivitiesHeart {
+		t, err := time.Parse("2006-01-02", entry.DateTime)
+		if err != nil {
+			chart.XAxis[i] = entry.DateTime // Fallback to raw date if parsing fails
+		} else {
+			chart.XAxis[i] = t.Weekday().String()[:3] + " " + t.Format("01-02")
+		}
+		// Create heart rate entry with zones map
+		heartRateEntry := HeartRateEntry{
+			Zones:       make(map[string]int),
+			RestingRate: entry.Value.RestingHeartRate,
+		}
+
+		// Add minutes for each zone
+		for _, zone := range entry.Value.HeartRateZones {
+			heartRateEntry.Zones[zone.Name] = zone.Minutes
+		}
+
+		chart.Series["Heart Rate"][i] = heartRateEntry
+
+	}
 	return chart
 }
 
@@ -456,6 +512,23 @@ func (fd *FitbitDownloader) DownloadActivities(activity string, days_back int) (
 	return data, nil
 }
 
+func (fd *FitbitDownloader) DownloadHeartRate(days_back int) (*ActivitiesHeartList, error) {
+
+	endData := time.Now().Format("2006-01-02")
+	startDate := time.Now().AddDate(0, 0, -days_back).Format("2006-01-02")
+
+	fmt.Printf("Reading heart rate data from %s to %s...\n", startDate, endData)
+
+	endpoint := fmt.Sprintf("https://api.fitbit.com/1/user/-/activities/heart/date/%s/%s.json", startDate, endData)
+
+	data, err := fd.getDataHeartRate(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download heart rate data: %v", err)
+	}
+	fmt.Println("Heart rate data downloaded successfully!")
+	return data, nil
+}
+
 func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
 
 	req, err := http.NewRequest("GET", endpoint, nil)
@@ -486,4 +559,37 @@ func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
 		return nil, fmt.Errorf("failed to parse steps data JSON for %s: %v", endpoint, err)
 	}
 	return &data, nil
+}
+
+func (fd *FitbitDownloader) getDataHeartRate(endpoint string) (*ActivitiesHeartList, error) {
+
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request for %s: %v", endpoint, err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+fd.TokenInfo.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request for %s failed: %v", endpoint, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("failed to download %s data: %d", endpoint, resp.StatusCode)
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response for %s: %v", endpoint, err)
+	}
+	var data ActivitiesHeartList
+
+	if err := json.Unmarshal(bodyBytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to parse heart rate data JSON for %s: %v", endpoint, err)
+	}
+	return &data, nil
+
 }

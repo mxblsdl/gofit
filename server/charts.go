@@ -8,7 +8,6 @@ import (
 )
 
 
-// TODO move to separate file
 func generateLineChart(data models.ChartData, chartType string) *charts.Line {
 	line := charts.NewLine()
 

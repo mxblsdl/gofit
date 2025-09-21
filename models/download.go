@@ -13,6 +13,7 @@ var Store = DataStore{
 	CaloriesData:  ChartData{},
 	ProfileData:   ProfileData{},
 	ElevationData: ChartData{},
+	HeartRateData: HeartChartData{},
 }
 
 const DAYS_BACK int = 14
@@ -73,14 +74,14 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	errChan := make(chan error, 3) // Buffer size of 3 to hold potential errors from goroutines
+	errChan := make(chan error, 4) // Buffer size of 3 to hold potential errors from goroutines
 
-	wg.Add(3)
+	wg.Add(4)
 	go func() {
 		defer wg.Done()
 		stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
 		if err != nil {
-			errChan <- fmt.Errorf("Failed to download steps data: %w", err)
+			errChan <- fmt.Errorf("failed to download steps data: %w", err)
 			return
 		}
 		if stepData != nil {
@@ -95,7 +96,7 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 		defer wg.Done()
 		caloriesData, err := downloader.DownloadActivities("calories", DAYS_BACK)
 		if err != nil {
-			errChan <- fmt.Errorf("Failed to download calories data: %w", err)
+			errChan <- fmt.Errorf("failed to download calories data: %w", err)
 			return
 		}
 		if caloriesData != nil {
@@ -110,13 +111,29 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 		defer wg.Done()
 		elevationData, err := downloader.DownloadActivities("elevation", DAYS_BACK)
 		if err != nil {
-			errChan <- fmt.Errorf("Failed to download elevation data: %w", err)
+			errChan <- fmt.Errorf("failed to download elevation data: %w", err)
 			return
 		}
 		if elevationData != nil {
 			processedData := elevationData.ProcessData(strconv.Itoa(DAYS_BACK))
 			mu.Lock()
 			Store.ElevationData = processedData
+			mu.Unlock()
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		heartRateData, err := downloader.DownloadHeartRate(DAYS_BACK)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to download heart rate data: %w", err)
+			return
+		}
+		if heartRateData != nil {
+			// Process and store heart rate data as needed
+			processedData := heartRateData.ProcessData(strconv.Itoa(DAYS_BACK))
+			mu.Lock()
+			Store.HeartRateData = processedData
 			mu.Unlock()
 		}
 	}()
