@@ -80,6 +80,13 @@ func generateHeartRateChart(data models.HeartChartData) *charts.Bar {
 			Bottom:     "bottom",
 			Padding:    8,
 			ItemHeight: 20,
+			Show:       opts.Bool(true),
+			Selected: map[string]bool{
+				"Out of Range (0 - 86 bpm)": false,
+				"Fat Burn (86 - 121 bpm)":   true,
+				"Cardio (121 - 147 bpm)":    true,
+				"Peak (147 - 220 bpm)":      true,
+			},
 		}),
 		charts.WithGridOpts(opts.Grid{
 			Bottom: "20%", // Reserves space at bottom for legend
@@ -133,6 +140,10 @@ func generateHeartRateChart(data models.HeartChartData) *charts.Bar {
 			percentage = math.Round(percentage*10) / 10 // Round to 2 decimal places
 			zoneData[i] = opts.BarData{Value: percentage}
 		}
+		// selected := true
+		// if zone == "Out of Range" {
+		// 	selected = false
+		// }
 
 		legendName := zone + " (" +
 			strconv.Itoa(zoneRanges[zone][0]) + " - " +
@@ -142,6 +153,9 @@ func generateHeartRateChart(data models.HeartChartData) *charts.Bar {
 				charts.WithBarChartOpts(opts.BarChart{
 					Stack: "total",
 				}),
+				// charts.WithLabelOpts(opts.Label{
+				// 	Show: &selected,
+				// }),
 			)
 	}
 
