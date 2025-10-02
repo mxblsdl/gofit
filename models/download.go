@@ -16,7 +16,7 @@ var Store = DataStore{
 	HeartRateData: HeartChartData{},
 }
 
-const DAYS_BACK int = 14
+// const DAYS_BACK int = 14
 
 // NewFitbitDownloader creates a new downloader instance
 func NewFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownloader {
@@ -39,7 +39,7 @@ func NewFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownload
 	}
 }
 
-func PopulateDataStore(clientID, clientSecret, dataDir string) error {
+func PopulateDataStore(clientID, clientSecret, dataDir string, days int) error {
 	downloader := NewFitbitDownloader(clientID, clientSecret, dataDir)
 
 	// Check if we already have token information
@@ -79,13 +79,13 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		stepData, err := downloader.DownloadActivities("steps", DAYS_BACK)
+		stepData, err := downloader.DownloadActivities("steps", days)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to download steps data: %w", err)
 			return
 		}
 		if stepData != nil {
-			processedData := stepData.ProcessData(strconv.Itoa(DAYS_BACK))
+			processedData := stepData.ProcessData(strconv.Itoa(days))
 			mu.Lock()
 			Store.StepsData = processedData
 			mu.Unlock()
@@ -94,13 +94,13 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 
 	go func() {
 		defer wg.Done()
-		caloriesData, err := downloader.DownloadActivities("calories", DAYS_BACK)
+		caloriesData, err := downloader.DownloadActivities("calories", days)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to download calories data: %w", err)
 			return
 		}
 		if caloriesData != nil {
-			processedData := caloriesData.ProcessData(strconv.Itoa(DAYS_BACK))
+			processedData := caloriesData.ProcessData(strconv.Itoa(days))
 			mu.Lock()
 			Store.CaloriesData = processedData
 			mu.Unlock()
@@ -109,13 +109,13 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 
 	go func() {
 		defer wg.Done()
-		elevationData, err := downloader.DownloadActivities("elevation", DAYS_BACK)
+		elevationData, err := downloader.DownloadActivities("elevation", days)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to download elevation data: %w", err)
 			return
 		}
 		if elevationData != nil {
-			processedData := elevationData.ProcessData(strconv.Itoa(DAYS_BACK))
+			processedData := elevationData.ProcessData(strconv.Itoa(days))
 			mu.Lock()
 			Store.ElevationData = processedData
 			mu.Unlock()
@@ -124,14 +124,14 @@ func PopulateDataStore(clientID, clientSecret, dataDir string) error {
 
 	go func() {
 		defer wg.Done()
-		heartRateData, err := downloader.DownloadHeartRate(DAYS_BACK)
+		heartRateData, err := downloader.DownloadHeartRate(days)
 		if err != nil {
 			errChan <- fmt.Errorf("failed to download heart rate data: %w", err)
 			return
 		}
 		if heartRateData != nil {
 			// Process and store heart rate data as needed
-			processedData := heartRateData.ProcessData(strconv.Itoa(DAYS_BACK))
+			processedData := heartRateData.ProcessData(strconv.Itoa(days))
 			mu.Lock()
 			Store.HeartRateData = processedData
 			mu.Unlock()

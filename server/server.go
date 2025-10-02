@@ -17,11 +17,12 @@ func Serve() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Set up HTTP routes
-	http.Handle("/", loggingMiddleware(http.HandlerFunc(IndexHandler)))
-	http.Handle("/auth", loggingMiddleware(http.HandlerFunc(AuthHandler)))
-	http.Handle("/auth-submit", loggingMiddleware(http.HandlerFunc(AuthSubmitHandler)))
-	http.Handle("/profile", loggingMiddleware(http.HandlerFunc(ProfileHandler)))
+	http.Handle("/", loggingMiddleware(http.HandlerFunc(indexHandler)))
+	http.Handle("/auth", loggingMiddleware(http.HandlerFunc(authHandler)))
+	http.Handle("/auth-submit", loggingMiddleware(http.HandlerFunc(authSubmitHandler)))
+	http.Handle("/profile", loggingMiddleware(http.HandlerFunc(profileHandler)))
 	http.Handle("/remove-secrets", loggingMiddleware(http.HandlerFunc(removeSecretsHandler)))
+	http.Handle("/update-days", loggingMiddleware(http.HandlerFunc(updateDaysHandler)))
 
 	port := "8081"
 	log.Printf("Server starting on http://localhost:%s", port)

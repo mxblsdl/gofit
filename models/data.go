@@ -1,5 +1,6 @@
 package models
 
+// TODO add chart type into chart struct
 type ChartData struct {
 	Title    string
 	Subtitle string

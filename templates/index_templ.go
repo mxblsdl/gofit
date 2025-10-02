@@ -43,7 +43,7 @@ func Index(stepsChart, elevationChart, calorieChart, heartRateChart template.HTM
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"dashboard-charts\"><div class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"dashboard-controls\"><form id=\"days-form\" hx-post=\"/update-days\" hx-target=\".dashboard-charts\" hx-swap=\"innerHTML\"><label for=\"days_back\">Days to Show:</label> <select id=\"days_back\" name=\"days_back\"><option value=\"7\">7</option> <option value=\"14\">14</option> <option value=\"21\">21</option> <option value=\"28\">28</option></select> <button type=\"submit\">Update</button></form></div><div class=\"dashboard-charts\"><div class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
