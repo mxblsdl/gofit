@@ -183,7 +183,7 @@ func removeSecretsHandler(w http.ResponseWriter, r *http.Request) {
 
 func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Update endpoint triggered")
-	
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -217,7 +217,6 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO look into optimizing this as far as new data downloaders
 	err = models.PopulateDataStore(account_info.ClientID, account_info.ClientSecret, "fitbit_data", days)
 	if err != nil {
 		http.Error(w, "Failed to populate data store: "+err.Error(), http.StatusInternalServerError)
@@ -237,7 +236,7 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 	caloriesChart.Render(&calBuf)
 	heartRateChart.Render(&heartBuf)
 
-	component := templates.Index(
+	component := templates.Charts(
 		template.HTML(stepBuf.String()),
 		template.HTML(eleBuf.String()),
 		template.HTML(calBuf.String()),

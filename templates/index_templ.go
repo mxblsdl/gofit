@@ -43,39 +43,15 @@ func Index(stepsChart, elevationChart, calorieChart, heartRateChart template.HTM
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"dashboard-controls\"><form id=\"days-form\" hx-post=\"/update-days\" hx-target=\".dashboard-charts\" hx-swap=\"innerHTML\"><label for=\"days_back\">Days to Show:</label> <select id=\"days_back\" name=\"days_back\"><option value=\"7\">7</option> <option value=\"14\">14</option> <option value=\"21\">21</option> <option value=\"28\">28</option></select> <button type=\"submit\">Update</button></form></div><div class=\"dashboard-charts\"><div class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"toast\" class=\"toast\"></div><div class=\"dashboard-container\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templ.Raw(stepsChart).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = Charts(stepsChart, elevationChart, calorieChart, heartRateChart).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"card\"><h2>Elevation Chart</h2><p>View your elevation data</p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templ.Raw(elevationChart).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div class=\"card\"><h2>Calories Chart</h2><p>View your calorie data</p>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templ.Raw(calorieChart).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div class=\"card\"><h2>Heart Rate Chart</h2>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templ.Raw(heartRateChart).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"dashboard-controls\"><form id=\"days-form\" hx-post=\"/update-days\" hx-target=\".dashboard-charts\" hx-swap=\"outerHTML\" hx-on::before-request=\"showToast('Updating charts...')\" hx-on::after-request=\"showToast('Charts updated successfully!')\"><label for=\"days_back\">Days to Show:</label> <select id=\"days_back\" name=\"days_back\"><option value=\"7\">7</option> <option value=\"14\" selected>14</option> <option value=\"21\">21</option> <option value=\"28\">28</option></select> <button type=\"submit\">Update</button></form></div><script>\n\t\tfunction showToast(message) {\n\t\t\tconsole.log(\"triggered\")\n\t\t\tconst toast = htmx.find(\"#toast\");\n\t\t\ttoast.textContent = message;\n\t\t\ttoast.classList.add(\"show\");\n\t\t\tsetTimeout(() => {\n\t\t\t\ttoast.classList.remove(\"show\");\n\t\t\t}, 3000);\n\t\t}\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

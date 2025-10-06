@@ -453,7 +453,7 @@ func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
 	}
 
 	fmt.Println("Downloading user profile data...")
-
+	// TODO implement some type of emssage when quota is hit
 	url := "https://api.fitbit.com/1/user/-/profile.json"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

@@ -4,39 +4,39 @@ import "html/template"
 
 templ Index(stepsChart, elevationChart, calorieChart, heartRateChart template.HTML) {
 	@Layout("Home") {
+		<div id="toast" class="toast"></div>
+		<div class="dashboard-container">
+			@Charts(stepsChart, elevationChart, calorieChart, heartRateChart)
+		</div>
 		<div class="dashboard-controls">
-			<form id="days-form" hx-post="/update-days" hx-target=".dashboard-charts" hx-swap="innerHTML">
+			<form
+				id="days-form"
+				hx-post="/update-days"
+				hx-target=".dashboard-charts"
+				hx-swap="outerHTML"
+				hx-on::before-request="showToast('Updating charts...')"
+				hx-on::after-request="showToast('Charts updated successfully!')"
+			>
 				<label for="days_back">Days to Show:</label>
 				<select id="days_back" name="days_back">
 					<option value="7">7</option>
-					<option value="14">14</option>
+					<option value="14" selected>14</option>
 					<option value="21">21</option>
 					<option value="28">28</option>
 				</select>
 				<button type="submit">Update</button>
 			</form>
 		</div>
-		<div class="dashboard-charts">
-			<div class="card">
-				<h2>Steps Chart</h2>
-				<p>View your daily step count</p>
-				@templ.Raw(stepsChart)
-			</div>
-			<div class="card">
-				<h2>Elevation Chart</h2>
-				<p>View your elevation data</p>
-				@templ.Raw(elevationChart)
-			</div>
-			<div class="card">
-				<h2>Calories Chart</h2>
-				<p>View your calorie data</p>
-				@templ.Raw(calorieChart)
-			</div>
-			<div class="card">
-				<h2>Heart Rate Chart</h2>
-				// <p>View your heart rate data</p>
-				@templ.Raw(heartRateChart)
-			</div>
-		</div>
+		<script>
+		function showToast(message) {
+			console.log("triggered")
+			const toast = htmx.find("#toast");
+			toast.textContent = message;
+			toast.classList.add("show");
+			setTimeout(() => {
+				toast.classList.remove("show");
+			}, 3000);
+		}
+		</script>
 	}
 }
