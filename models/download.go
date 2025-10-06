@@ -19,6 +19,16 @@ var Store = DataStore{
 	HeartRateData: HeartChartData{},
 }
 
+type CacheData struct {
+	MaxDays   int            `json:"max_days"`
+	Timestamp int64          `json:"timestamp"`
+	Steps     ChartData      `json:"steps"`
+	Calories  ChartData      `json:"calories"`
+	Elevation ChartData      `json:"elevation"`
+	HeartRate HeartChartData `json:"heart_rate"`
+	Profile   ProfileData    `json:"profile"`
+}
+
 // NewFitbitDownloader creates a new downloader instance
 func NewFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownloader {
 	// Create data directory if it doesn't exist
@@ -195,15 +205,6 @@ func cacheData(downloader *FitbitDownloader) error {
 	return nil
 }
 
-type CacheData struct {
-	MaxDays   int            `json:"max_days"`
-	Timestamp int64          `json:"timestamp"`
-	Steps     ChartData      `json:"steps"`
-	Calories  ChartData      `json:"calories"`
-	Elevation ChartData      `json:"elevation"`
-	HeartRate HeartChartData `json:"heart_rate"`
-	Profile   ProfileData    `json:"profile"`
-}
 
 func loadCacheData(dataDir string) (*CacheData, error) {
 	cacheFile := filepath.Join(dataDir, "cache.json")
