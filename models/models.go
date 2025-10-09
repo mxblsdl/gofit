@@ -106,6 +106,16 @@ type ActivitiesHeartList struct {
 	} `json:"activities-heart"`
 }
 
+type CacheData struct {
+	MaxDays   int            `json:"max_days"`
+	Timestamp int64          `json:"timestamp"`
+	Steps     ChartData      `json:"steps"`
+	Calories  ChartData      `json:"calories"`
+	Elevation ChartData      `json:"elevation"`
+	HeartRate HeartChartData `json:"heart_rate"`
+	Profile   ProfileData    `json:"profile"`
+}
+
 // UnmarshalJSON implements custom unmarshalling for ActivityData to handle Fitbit's activity data structure.
 func (a *ActivityData) UnmarshalJSON(data []byte) error {
 	// Custom unmarshal to handle the structure of Fitbit activity data

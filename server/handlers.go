@@ -127,7 +127,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		templ.Handler(component).ServeHTTP(w, r)
 		return
 	}
-	stepsChart := generateLineChart(models.Store.StepsData, "steps")
+	stepsChart := models.Store.StepsData.GenerateLineChart("steps")
 
 	var step bytes.Buffer
 	err = stepsChart.Render(&step)
@@ -136,7 +136,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eleChart := generateLineChart(models.Store.ElevationData, "elevation")
+	eleChart := models.Store.ElevationData.GenerateLineChart("elevation")
 	var ele bytes.Buffer
 	err = eleChart.Render(&ele)
 	if err != nil {
@@ -144,7 +144,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calChart := generateLineChart(models.Store.CaloriesData, "calories")
+	calChart := models.Store.CaloriesData.GenerateLineChart("calories")
 	var cal bytes.Buffer
 	err = calChart.Render(&cal)
 	if err != nil {
@@ -152,7 +152,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	heartChart := generateHeartRateChart(models.Store.HeartRateData)
+	heartChart := models.Store.HeartRateData.GenerateHeartRateChart()
 	var heart bytes.Buffer
 	err = heartChart.Render(&heart)
 	if err != nil {
@@ -224,10 +224,10 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render charts
-	stepsChart := generateLineChart(models.Store.StepsData, "steps")
-	elevationChart := generateLineChart(models.Store.ElevationData, "elevation")
-	caloriesChart := generateLineChart(models.Store.CaloriesData, "calories")
-	heartRateChart := generateHeartRateChart(models.Store.HeartRateData)
+	stepsChart := models.Store.StepsData.GenerateLineChart("steps")
+	elevationChart := models.Store.ElevationData.GenerateLineChart("elevation")
+	caloriesChart := models.Store.CaloriesData.GenerateLineChart("calories")
+	heartRateChart := models.Store.HeartRateData.GenerateHeartRateChart()
 
 	var stepBuf, eleBuf, calBuf, heartBuf bytes.Buffer
 

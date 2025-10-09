@@ -1,4 +1,4 @@
-package server
+package models
 
 import (
 	"math"
@@ -6,10 +6,28 @@ import (
 
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
-	"github.com/gofit/models"
 )
 
-func generateLineChart(data models.ChartData, chartType string) *charts.Line {
+type ChartData struct {
+	Title    string
+	Subtitle string
+	XAxis    []string
+	Series   map[string][]int
+}
+
+type HeartChartData struct {
+	Title    string
+	Subtitle string
+	XAxis    []string
+	Series   map[string][]HeartRateEntry
+}
+
+type HeartRateEntry struct {
+	Zones       map[string]int
+	RestingRate int
+}
+
+func (data *ChartData) GenerateLineChart(chartType string) *charts.Line {
 	line := charts.NewLine()
 
 	line.SetGlobalOptions(
@@ -67,7 +85,7 @@ func generateLineItems(data []int) []opts.LineData {
 	}
 	return items
 }
-func generateHeartRateChart(data models.HeartChartData) *charts.Bar {
+func (data *HeartChartData) GenerateHeartRateChart() *charts.Bar {
 	bar := charts.NewBar()
 
 	bar.SetGlobalOptions(
@@ -140,10 +158,6 @@ func generateHeartRateChart(data models.HeartChartData) *charts.Bar {
 			percentage = math.Round(percentage*10) / 10 // Round to 2 decimal places
 			zoneData[i] = opts.BarData{Value: percentage}
 		}
-		// selected := true
-		// if zone == "Out of Range" {
-		// 	selected = false
-		// }
 
 		legendName := zone + " (" +
 			strconv.Itoa(zoneRanges[zone][0]) + " - " +
@@ -153,9 +167,6 @@ func generateHeartRateChart(data models.HeartChartData) *charts.Bar {
 				charts.WithBarChartOpts(opts.BarChart{
 					Stack: "total",
 				}),
-				// charts.WithLabelOpts(opts.Label{
-				// 	Show: &selected,
-				// }),
 			)
 	}
 
