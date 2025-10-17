@@ -47,7 +47,6 @@ func authSubmitHandler(w http.ResponseWriter, r *http.Request) {
 	account_info := models.Config{
 		ClientID:     r.FormValue("fitbit_id"),
 		ClientSecret: r.FormValue("fitbit_secret"),
-		// RedirectURI:  "http://localhost:8080",
 	}
 
 	// write the credentials to a file or database
@@ -76,7 +75,6 @@ func findClientInfo(dataFolder string) (string, error) {
 		// If account_info does not exist, redirect to the auth page
 		log.Println("Account info not found, redirecting to auth page")
 		return "", err
-		// http.Redirect(w, r, "/auth", http.StatusFound)
 
 	}
 	return account_info_file, nil
@@ -127,7 +125,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		templ.Handler(component).ServeHTTP(w, r)
 		return
 	}
-	stepsChart := models.Store.StepsData.GenerateLineChart("steps")
+	stepsChart := models.Store.StepsData.GenerateLineChart()
 
 	var step bytes.Buffer
 	err = stepsChart.Render(&step)
@@ -136,7 +134,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eleChart := models.Store.ElevationData.GenerateLineChart("elevation")
+	eleChart := models.Store.ElevationData.GenerateLineChart()
 	var ele bytes.Buffer
 	err = eleChart.Render(&ele)
 	if err != nil {
@@ -144,7 +142,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	calChart := models.Store.CaloriesData.GenerateLineChart("calories")
+	calChart := models.Store.CaloriesData.GenerateLineChart()
 	var cal bytes.Buffer
 	err = calChart.Render(&cal)
 	if err != nil {
@@ -224,9 +222,9 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Render charts
-	stepsChart := models.Store.StepsData.GenerateLineChart("steps")
-	elevationChart := models.Store.ElevationData.GenerateLineChart("elevation")
-	caloriesChart := models.Store.CaloriesData.GenerateLineChart("calories")
+	stepsChart := models.Store.StepsData.GenerateLineChart()
+	elevationChart := models.Store.ElevationData.GenerateLineChart()
+	caloriesChart := models.Store.CaloriesData.GenerateLineChart()
 	heartRateChart := models.Store.HeartRateData.GenerateHeartRateChart()
 
 	var stepBuf, eleBuf, calBuf, heartBuf bytes.Buffer

@@ -70,6 +70,7 @@ func filterDataByDays(data ChartData, days int) ChartData {
 	startIdx := len(data.XAxis) - days
 
 	filtered := ChartData{
+		Type:    data.Type,
 		Title:    data.Title,
 		Subtitle: data.Subtitle,
 		XAxis:    data.XAxis[startIdx:],

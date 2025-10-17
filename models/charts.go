@@ -9,6 +9,7 @@ import (
 )
 
 type ChartData struct {
+	Type     string
 	Title    string
 	Subtitle string
 	XAxis    []string
@@ -27,7 +28,7 @@ type HeartRateEntry struct {
 	RestingRate int
 }
 
-func (data *ChartData) GenerateLineChart(chartType string) *charts.Line {
+func (data *ChartData) GenerateLineChart() *charts.Line {
 	line := charts.NewLine()
 
 	line.SetGlobalOptions(
@@ -54,7 +55,7 @@ func (data *ChartData) GenerateLineChart(chartType string) *charts.Line {
 	// X-axis data
 	line.SetXAxis(data.XAxis)
 
-	if chartType == "elevation" {
+	if data.Type == "elevation" {
 		line.SetGlobalOptions(
 			charts.WithYAxisOpts(opts.YAxis{
 				Name:         "Elevation (m)",

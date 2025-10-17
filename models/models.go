@@ -137,6 +137,7 @@ func (s *ActivityData) ProcessData(days_back string) ChartData {
 	tag := language.Make(s.ActivityType)
 	series := cases.Title(tag).String(s.ActivityType)
 	chart := ChartData{
+		Type:     s.ActivityType,
 		Title:    fmt.Sprintf("%s Over Time", cases.Title(language.English).String(s.ActivityType)),
 		Subtitle: fmt.Sprintf("Daily %s count for the last %s days", s.ActivityType, days_back),
 		XAxis:    make([]string, len(s.Activities)),
