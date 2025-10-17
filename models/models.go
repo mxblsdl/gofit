@@ -116,6 +116,15 @@ type CacheData struct {
 	Profile   ProfileData    `json:"profile"`
 }
 
+type RateLimitError struct {
+	RetryAfter int    // Seconds until next request is allowed
+	Message    string // Error message from Fitbit API
+}
+
+func (e *RateLimitError) Error() string {
+	return fmt.Sprintf("Rate limit exceeded: %s. Try again in %d seconds", e.Message, e.RetryAfter)
+}
+
 // UnmarshalJSON implements custom unmarshalling for ActivityData to handle Fitbit's activity data structure.
 func (a *ActivityData) UnmarshalJSON(data []byte) error {
 	// Custom unmarshal to handle the structure of Fitbit activity data
@@ -475,6 +484,18 @@ func (fd *FitbitDownloader) DownloadProfile() (*ProfileData, error) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	if resp.StatusCode == 429 {
+		retryAfterStr := resp.Header.Get("Retry-After")
+		retryAfter, _ := strconv.Atoi(retryAfterStr)
+		if retryAfter == 0 {
+			retryAfter = 3600 // Default to 60 seconds if not provided
+		}
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, &RateLimitError{
+			RetryAfter: retryAfter,
+			Message:    string(bodyBytes),
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("profile request failed: %v", err)
 	}
@@ -543,6 +564,7 @@ func (fd *FitbitDownloader) DownloadHeartRate(days_back int) (*ActivitiesHeartLi
 func (fd *FitbitDownloader) getData(endpoint string) (*ActivityData, error) {
 
 	req, err := http.NewRequest("GET", endpoint, nil)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request for %s: %v", endpoint, err)
 	}
