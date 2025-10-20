@@ -2,11 +2,11 @@ package templates
 
 import "html/template"
 
-templ Index(stepsChart, elevationChart, calorieChart, heartRateChart template.HTML) {
+templ Index(stepsChart, elevationChart, calorieChart, heartRateChart, restingRateChart template.HTML) {
 	@Layout("Home") {
 		<div id="toast" class="toast"></div>
 		<div class="dashboard-container">
-			@Charts(stepsChart, elevationChart, calorieChart, heartRateChart)
+			@Charts(stepsChart, elevationChart, calorieChart, heartRateChart, restingRateChart)
 		</div>
 		<div class="dashboard-controls">
 			<form

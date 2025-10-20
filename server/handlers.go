@@ -157,8 +157,15 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to render heart rate chart", http.StatusInternalServerError)
 		return
 	}
+	restingHeartChart := models.Store.HeartRateData.GenerateRestingHeartRateChart()
+	var restingHeart bytes.Buffer
+	err = restingHeartChart.Render(&restingHeart)
+	if err != nil {
+		http.Error(w, "Failed to render resting heart rate chart", http.StatusInternalServerError)
+		return
+	}
 
-	component := templates.Index(template.HTML(step.String()), template.HTML(ele.String()), template.HTML(cal.String()), template.HTML(heart.String()))
+	component := templates.Index(template.HTML(step.String()), template.HTML(ele.String()), template.HTML(cal.String()), template.HTML(heart.String()), template.HTML(restingHeart.String()))
 	templ.Handler(component).ServeHTTP(w, r)
 
 }
@@ -226,19 +233,22 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 	elevationChart := models.Store.ElevationData.GenerateLineChart()
 	caloriesChart := models.Store.CaloriesData.GenerateLineChart()
 	heartRateChart := models.Store.HeartRateData.GenerateHeartRateChart()
+	restingHeartChart := models.Store.HeartRateData.GenerateRestingHeartRateChart()
 
-	var stepBuf, eleBuf, calBuf, heartBuf bytes.Buffer
+	var stepBuf, eleBuf, calBuf, heartBuf, restingHeart bytes.Buffer
 
 	stepsChart.Render(&stepBuf)
 	elevationChart.Render(&eleBuf)
 	caloriesChart.Render(&calBuf)
 	heartRateChart.Render(&heartBuf)
+	restingHeartChart.Render(&restingHeart)
 
 	component := templates.Charts(
 		template.HTML(stepBuf.String()),
 		template.HTML(eleBuf.String()),
 		template.HTML(calBuf.String()),
 		template.HTML(heartBuf.String()),
+		template.HTML(restingHeart.String()),
 	)
 	templ.Handler(component).ServeHTTP(w, r)
 }

@@ -2,30 +2,34 @@ package templates
 
 import "html/template"
 
-
-templ Charts(stepsChart, elevationChart, calorieChart, heartRateChart template.HTML) {
-    <div class="dashboard-container">
-        <div class="dashboard-charts">
-            <div class="card">
-                <h2>Steps Chart</h2>
-                <p>View your daily step count</p>
-                @templ.Raw(stepsChart)
-            </div>
-            <div class="card">
-                <h2>Elevation Chart</h2>
-                <p>View your elevation data</p>
-                @templ.Raw(elevationChart)
-            </div>
-            <div class="card">
-                <h2>Calories Chart</h2>
-                <p>View your calorie data</p>
-                @templ.Raw(calorieChart)
-            </div>
-            <div class="card">
-                <h2>Heart Rate Chart</h2>
-                // <p>View your heart rate data</p>
-                @templ.Raw(heartRateChart)
-            </div>
-        </div>
-    </div>
+templ Charts(stepsChart, elevationChart, calorieChart, heartRateChart, restingRateChart template.HTML) {
+	<div class="dashboard-container">
+		<div class="dashboard-charts">
+			<div class="card">
+				<h2>Steps Chart</h2>
+				<p>View your daily step count</p>
+				@templ.Raw(stepsChart)
+			</div>
+			<div class="card">
+				<h2>Elevation Chart</h2>
+				<p>View your elevation data</p>
+				@templ.Raw(elevationChart)
+			</div>
+			<div class="card">
+				<h2>Calories Chart</h2>
+				<p>View your calorie data</p>
+				@templ.Raw(calorieChart)
+			</div>
+			<div class="card">
+				<h2>Heart Rate Chart</h2>
+				// <p>View your heart rate data</p>
+				@templ.Raw(heartRateChart)
+			</div>
+			<div class="card">
+				<h2>Resting Heart Rate Chart</h2>
+				<p>View your resting heart rate data</p>
+				@templ.Raw(restingRateChart)
+			</div>
+		</div>
+	</div>
 }
