@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -127,45 +126,20 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	stepsChart := models.Store.StepsData.GenerateLineChart()
 
-	var step bytes.Buffer
-	err = stepsChart.Render(&step)
-	if err != nil {
-		http.Error(w, "Failed to render chart", http.StatusInternalServerError)
-		return
-	}
-
 	eleChart := models.Store.ElevationData.GenerateLineChart()
-	var ele bytes.Buffer
-	err = eleChart.Render(&ele)
-	if err != nil {
-		http.Error(w, "Failed to render elevation chart", http.StatusInternalServerError)
-		return
-	}
 
 	calChart := models.Store.CaloriesData.GenerateLineChart()
-	var cal bytes.Buffer
-	err = calChart.Render(&cal)
-	if err != nil {
-		http.Error(w, "Failed to render calories chart", http.StatusInternalServerError)
-		return
-	}
 
 	heartChart := models.Store.HeartRateData.GenerateHeartRateChart()
-	var heart bytes.Buffer
-	err = heartChart.Render(&heart)
-	if err != nil {
-		http.Error(w, "Failed to render heart rate chart", http.StatusInternalServerError)
-		return
-	}
-	restingHeartChart := models.Store.HeartRateData.GenerateRestingHeartRateChart()
-	var restingHeart bytes.Buffer
-	err = restingHeartChart.Render(&restingHeart)
-	if err != nil {
-		http.Error(w, "Failed to render resting heart rate chart", http.StatusInternalServerError)
-		return
-	}
 
-	component := templates.Index(template.HTML(step.String()), template.HTML(ele.String()), template.HTML(cal.String()), template.HTML(heart.String()), template.HTML(restingHeart.String()))
+	restingHeartChart := models.Store.HeartRateData.GenerateRestingHeartRateChart()
+
+	component := templates.Index(
+		template.HTML(stepsChart),
+		template.HTML(eleChart),
+		template.HTML(calChart),
+		template.HTML(heartChart),
+		template.HTML(restingHeartChart))
 	templ.Handler(component).ServeHTTP(w, r)
 
 }
@@ -235,20 +209,12 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 	heartRateChart := models.Store.HeartRateData.GenerateHeartRateChart()
 	restingHeartChart := models.Store.HeartRateData.GenerateRestingHeartRateChart()
 
-	var stepBuf, eleBuf, calBuf, heartBuf, restingHeart bytes.Buffer
-
-	stepsChart.Render(&stepBuf)
-	elevationChart.Render(&eleBuf)
-	caloriesChart.Render(&calBuf)
-	heartRateChart.Render(&heartBuf)
-	restingHeartChart.Render(&restingHeart)
-
 	component := templates.Charts(
-		template.HTML(stepBuf.String()),
-		template.HTML(eleBuf.String()),
-		template.HTML(calBuf.String()),
-		template.HTML(heartBuf.String()),
-		template.HTML(restingHeart.String()),
+		template.HTML(stepsChart),
+		template.HTML(elevationChart),
+		template.HTML(caloriesChart),
+		template.HTML(heartRateChart),
+		template.HTML(restingHeartChart),
 	)
 	templ.Handler(component).ServeHTTP(w, r)
 }

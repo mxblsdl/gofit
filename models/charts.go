@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"math"
 	"strconv"
 
@@ -28,7 +29,7 @@ type HeartRateEntry struct {
 	RestingRate int
 }
 
-func (data *ChartData) GenerateLineChart() *charts.Line {
+func (data *ChartData) GenerateLineChart() string {
 	line := charts.NewLine()
 
 	line.SetGlobalOptions(
@@ -75,7 +76,10 @@ func (data *ChartData) GenerateLineChart() *charts.Line {
 
 	line.SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}))
 
-	return line
+	var buf bytes.Buffer
+	line.Render(&buf)
+
+	return buf.String()
 }
 
 func generateLineItems(data []int) []opts.LineData {
@@ -94,7 +98,7 @@ func generateBarItems(data []int) []opts.BarData {
 	return items
 }
 
-func (data *HeartChartData) GenerateHeartRateChart() *charts.Bar {
+func (data *HeartChartData) GenerateHeartRateChart() string {
 	bar := charts.NewBar()
 
 	bar.SetGlobalOptions(
@@ -179,10 +183,13 @@ func (data *HeartChartData) GenerateHeartRateChart() *charts.Bar {
 			)
 	}
 
-	return bar
+	var buf bytes.Buffer
+	bar.Render(&buf)
+
+	return buf.String()
 }
 
-func (data *HeartChartData) GenerateRestingHeartRateChart() *charts.Bar {
+func (data *HeartChartData) GenerateRestingHeartRateChart() string {
 	line := charts.NewBar()
 
 	line.SetGlobalOptions(
@@ -228,5 +235,8 @@ func (data *HeartChartData) GenerateRestingHeartRateChart() *charts.Bar {
 
 	line.SetSeriesOptions(charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}))
 
-	return line
+	var buf bytes.Buffer
+	line.Render(&buf)
+
+	return buf.String()
 }
