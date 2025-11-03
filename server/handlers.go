@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -116,7 +115,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Account info loaded successfully:", account_info)
+	log.Println("Account info loaded successfully")
 
 	err = models.PopulateDataStore(account_info.ClientID, account_info.ClientSecret, "fitbit_data", 14)
 	if err != nil {
@@ -174,7 +173,6 @@ func updateDaysHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Debug form values: %s", r.Form)
 	days_back := r.FormValue("days_back")
 
 	log.Println("Updating days back to:", days_back)

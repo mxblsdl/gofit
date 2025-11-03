@@ -5,14 +5,16 @@ import (
 	"net/http"
 )
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Endpoint: %s, Method: %s", r.URL.Path, r.Method)
-		next.ServeHTTP(w, r)
-	})
-}
 
 func Serve() {
+
+	logFile, err := setupLogging()
+	if err != nil {
+		log.Fatalf("Failed to set up logging: %v", err)
+	}
+	defer logFile.Close()
+
+	// Serve static files
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
@@ -25,11 +27,10 @@ func Serve() {
 	http.Handle("/update-days", loggingMiddleware(http.HandlerFunc(updateDaysHandler)))
 
 	port := "8081"
+
 	log.Printf("Server starting on http://localhost:%s", port)
 	log.Printf("Visit http://localhost:%s to see the charts", port)
-
-	// Start the server
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal("Server failed to start:", err)
+		log.Fatalf("Could not listen on %s: %v\n", port, err)
 	}
 }
