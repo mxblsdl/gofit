@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-
 func Serve() {
 
 	logFile, err := setupLogging()
@@ -31,6 +30,6 @@ func Serve() {
 	log.Printf("Server starting on http://localhost:%s", port)
 	log.Printf("Visit http://localhost:%s to see the charts", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Could not listen on %s: %v\n", port, err)
+		log.Printf("Could not listen on %s: %v\n", port, err)
 	}
 }
