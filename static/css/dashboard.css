@@ -1,7 +1,6 @@
 .dashboard-container {
   display: flex;
-  gap: 2rem;
-  max-width: 1400px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 1rem;
   align-items: flex-start;
@@ -10,10 +9,10 @@
 .dashboard-charts {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem; /* Add spacing between grid items */
   padding: 1rem;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
