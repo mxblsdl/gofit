@@ -33,7 +33,7 @@ func (data *ChartData) GenerateLineChart() string {
 	line := charts.NewLine()
 
 	line.SetGlobalOptions(
-		charts.WithInitializationOpts(opts.Initialization{Theme: "macarons"}),
+		charts.WithInitializationOpts(opts.Initialization{Theme: "macarons", Width: "100%"}),
 		charts.WithTitleOpts(opts.Title{
 			Title:    data.Title,
 			Subtitle: data.Subtitle,

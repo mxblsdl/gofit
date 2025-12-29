@@ -1,51 +1,65 @@
+/* safer box model */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* keep everything centered and contained */
 .dashboard-container {
-  display: flex;
-  max-width: 1000px;
+  max-width: 1400px; /* limit overall dashboard width */
   margin: 0 auto;
-  padding: 1rem;
   align-items: flex-start;
 }
 
+/* grid with two cards per row, each column allowed to shrink */
 .dashboard-charts {
-  flex: 1;
+  width: 100%;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem; /* Add spacing between grid items */
-  padding: 1rem;
-  max-width: 1000px;
-  margin: 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
 }
 
+/* card layout - allow children to size correctly and prevent overflow */
 .dashboard-charts .card {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  padding: 1rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* critical to prevent grid column overflow */
 }
 
+/* ensure chart area fills remaining card space */
+.dashboard-charts .card .chart-container,
+.dashboard-charts .card > div[id^="chart-"] { /* support go-echarts' generated div */
+  flex: 1 1 auto;
+  width: 100%;
+  height: 360px;    /* fixed height for predictable layout */
+  min-height: 240px;
+}
+
+/* hover effect */
 .dashboard-charts .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* headings / copy */
 .dashboard-charts h2 {
   color: #2c3e50;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
 }
-
 .dashboard-charts p {
   color: #666;
-  margin-bottom: 1.5rem;
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
 }
 
-/* Make sure charts have a minimum height */
-.dashboard-charts .chart-container {
-  min-height: 300px;
-  width: 100%;
-}
-
+/* controls column (keeps sticky controls at right) */
 .dashboard-controls {
   position: sticky;
   top: 3rem;
@@ -57,52 +71,15 @@
   align-self: flex-start;
 }
 
-.dashboard-controls form {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.dashboard-controls select {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.dashboard-controls button {
-  padding: 0.5rem 1rem;
-  background: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  padding: 1rem 1.5rem;
-  background: #4caf50;
-  color: white;
-  border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: none;
-  z-index: 1000;
-  animation: slideIn 0.3s ease-out forwards;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+/* responsive: one column on narrower screens */
+@media (max-width: 900px) {
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
 
-.toast.show {
-  display: block;
-}
+  .dashboard-charts .card .chart-container,
+  .dashboard-charts .card > div[id^="chart-"] {
+    height: 320px;
+  }
+} 

@@ -31,7 +31,7 @@ func Charts(stepsChart, elevationChart, calorieChart, heartRateChart, restingRat
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"dashboard-container\"><div class=\"dashboard-charts\"><div class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div><div class=\"dashboard-charts\"><div class=\"card\"><h2>Steps Chart</h2><p>View your daily step count</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
