@@ -26,10 +26,11 @@ func Serve() {
 	http.Handle("/update-days", loggingMiddleware(http.HandlerFunc(updateDaysHandler)))
 
 	port := "8081"
+	host := "0.0.0.0"
 
-	log.Printf("Server starting on http://localhost:%s", port)
-	log.Printf("Visit http://localhost:%s to see the charts", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	log.Printf("Server starting on http://%s:%s", host, port)
+	log.Printf("Visit http://%s:%s to see the charts", host, port)
+	if err := http.ListenAndServe(host+":"+port, nil); err != nil {
 		log.Printf("Could not listen on %s: %v\n", port, err)
 	}
 }
