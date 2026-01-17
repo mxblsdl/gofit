@@ -167,7 +167,7 @@ func newFitbitDownloader(clientID, clientSecret, dataDir string) *FitbitDownload
 		Config: Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			RedirectURI:  "http://localhost:8080",
+			RedirectURI:  "http://fitbit-pi.local",
 			RedirectPort: "8080",
 		},
 		DataDir: dataDir,

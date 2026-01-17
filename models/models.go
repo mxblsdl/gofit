@@ -229,7 +229,7 @@ func (fd *FitbitDownloader) StartAuthFlow() error {
 	params.Add("client_id", fd.Config.ClientID)
 	params.Add("response_type", "code")
 	params.Add("scope", "activity heartrate location nutrition profile settings sleep social weight")
-	params.Add("redirect_uri", fd.Config.RedirectURI)
+	params.Add("redirect_uri", fd.Config.RedirectURI+":"+fd.Config.RedirectPort)
 
 	fullAuthURL := fmt.Sprintf("%s?%s", authURL, params.Encode())
 
@@ -278,7 +278,7 @@ func (fd *FitbitDownloader) startCallbackServer(authCodeChan chan<- string, errC
 
 	mux := http.NewServeMux()
 	server := &http.Server{
-		Addr:    "localhost:" + fd.Config.RedirectPort,
+		Addr:    fd.Config.RedirectURI + ":" + fd.Config.RedirectPort,
 		Handler: mux,
 	}
 	// ERROR handling the index page for the server
@@ -320,7 +320,7 @@ func (fd *FitbitDownloader) getAccessToken(authCode string) error {
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("code", authCode)
-	data.Set("redirect_uri", fd.Config.RedirectURI)
+	data.Set("redirect_uri", fd.Config.RedirectURI+":"+fd.Config.RedirectPort)
 
 	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
